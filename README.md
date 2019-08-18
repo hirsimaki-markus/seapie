@@ -1,5 +1,7 @@
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
+
 # SEAPIE
+
 Scope Escaping Arbitary Python Injection Executor
 
 ## Unlicensing
