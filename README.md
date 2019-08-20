@@ -14,6 +14,8 @@ def test():
   x=1
   seapie()
   print(x)
+
+test()
 ```
 
 ## Unlicensing
