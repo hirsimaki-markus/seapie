@@ -9,9 +9,11 @@ You can call ``seapie()`` _anywhere_ in your code to open python interpeter like
 ## Example
 
 ```python
-from seapie.py import seapie
-markdown = Redcarpet.new("Hello World!")
-puts markdown.to_html
+from SEAPIE.seapie import *
+def test():
+  x=1
+  seapie()
+  print(x)
 ```
 
 ## Unlicensing
