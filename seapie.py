@@ -40,7 +40,8 @@ def seapie(scope=1):
         except SyntaxError:        # and pass statements
             exec(codeblock)
 
-
+        # purge updates from vairables used in this function to avoid
+        # recursive namespaces and other pollution
         updates = dict(local_frame.f_locals)
         for i in ("injection", "frame", "__doc__", "single_prompt",
                  "codeblock", "parent_frame", "local_frame", "updates", "scope", "i"):
@@ -49,6 +50,7 @@ def seapie(scope=1):
             except KeyError: # remove local variables if they exist to avoid
                 pass         # polluting namespace
 
+        # push updates to parent namespace. this cannot delete items
         local_frame.f_locals.update(updates)
         ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent_frame),ctypes.c_int(1))
         
