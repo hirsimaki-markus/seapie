@@ -1,11 +1,11 @@
+_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_  
+_Seapie opens python prompt when you need something quick dirty and interactive in your code._
+
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
 # SEAPIE
 
 ``SEAPIE`` stands for ``Scope Escaping Arbitrary Python Injection Executor``
-
-Have you ever wanted to use a debugger without bothering to learn how to use a debugger? Seapie solves that by opening python
-interpreter emulator that behaves as you would expect.
 
 You can call ``seapie()`` _anywhere_ in your code to open python interpeter like console that can edit global, local and any
 other variable available in _any_ scope that is in the current call stack.
