@@ -4,6 +4,9 @@
 
 ``SEAPIE`` stands for ``Scope Escaping Arbitrary Python Injection Executor``
 
+Have you ever wanted to use a debugger without bothering to learn how to use a debugger? Seapie solves that by opening python
+interpreter emulator that behaves as you would expect.
+
 You can call ``seapie()`` _anywhere_ in your code to open python interpeter like console that can edit global, local and any
 other variable available in _any_ scope that is in the current call stack.
 
@@ -37,7 +40,9 @@ can do it if you wish to shoot yourself in the foot.
 
 ## Todo
 * Implement support for global variables
-* Look for a way to allow assinging new variables and importing from seapie prompt without having to rely on exec() in main program
+* Look for a way to allow assinging new variables and importing from seapie prompt without having to rely on exec() in main
+program (this might actually be impossible without disabling some optimizations)
+* Implement way to easily change scope inside the prompt
 
 ## Unlicensing
 Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019
