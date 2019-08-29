@@ -26,11 +26,14 @@ new value of x is 2
 
 ## Known issues
 
-Assinging new variables via seapie only works but calling variable that has only been defined in seapie prompt will result in
-NameError. You can try circumventing this by calling and parsing locals() to get your newly and hackily assinged variable name
-and using exec() instead of directly calling the variable.
+Assinging new completely variables via seapie prompt works but calling variable that has only been defined in seapie prompt
+will result in NameError. You can try circumventing this by calling and parsing locals() to get your newly and hackily
+assinged variable name and using exec() instead of directly calling the variable. Same goes for importing new modules as they
+act like variables. So if you import datetime in seapie prompt you should call exec("print(datetime)") instead of calling
+print(datetime) in your main program.
 
-But you most likely shouldn't structure your code to call variables that have been defined via interactive propmt only.
+You most likely shouldn't structure your code to call variables that have been defined via interactive propmt only but you
+can do it if you wish to shoot yourself in the foot.
 
 
 ## Unlicensing
