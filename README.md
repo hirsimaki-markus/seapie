@@ -9,7 +9,7 @@ other variable available in _any_ scope that is in the current call stack.
 
 ## Example
 
-```python
+```
 >>> import seapie
 >>>
 >>> def test():
@@ -17,13 +17,11 @@ other variable available in _any_ scope that is in the current call stack.
 ...     seapie.seapie()
 ...     print("new value of x is", x)
 ...
->>>
 >>> test()
-SEAPIE v0.3 type !help for SEAPIE help
+SEAPIE v0.4 type !help for SEAPIE help
 >>> x = 2 # anow we change the value of x in scope of test()
 >>> !exit
 new value of x is 2
->>>
 ```
 
 ## Known issues
