@@ -35,6 +35,9 @@ print(datetime) in your main program.
 You most likely shouldn't structure your code to call variables that have been defined via interactive propmt only but you
 can do it if you wish to shoot yourself in the foot.
 
+## Todo
+* Implement support for global variables
+* Look for a way to allow assinging new variables and importing from seapie prompt without having to rely on exec() in main program
 
 ## Unlicensing
 Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019
