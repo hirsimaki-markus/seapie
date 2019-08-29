@@ -1,6 +1,6 @@
 import sys
 import ctypes
-import codeop
+import code
 import traceback
 
 def seapie(scope=1):
@@ -9,13 +9,22 @@ def seapie(scope=1):
     # https://faster-cpython.readthedocs.io/mutable.html
     # https://docs.python.org/3/library/codeop.html#codeop.compile_command
     # https://docs.python.org/3/library/code.html#module-code
+    try:
+        sys.ps1
+    except AttributeError:
+        sys.ps1 = ">>> "
+    try:
+        sys.ps2
+    except AttributeError:
+        sys.ps2 = "... "
+
 
     def single_prompt():
             accumulator = ""
             while True:
                 try:
-                    if not accumulator: raw_text = input(">>> ")
-                    else:               raw_text = input("... ")
+                    if not accumulator: raw_text = input(str(sys.ps1))
+                    else:               raw_text = input(str(sys.ps2))
                 except KeyboardInterrupt:
                     raw_text = ""
                     print("\nKeyboardInterrupt")
@@ -25,17 +34,21 @@ def seapie(scope=1):
                 accumulator += "\n"+raw_text
                 # add newline to as input doesnt read it. this will add extra
                 # newline at start
-                
+
                 try:
-                    result = codeop.compile_command(accumulator)
+                    result = code.compile_command(accumulator)
                 except SyntaxError:
-                    #result = accumulator
-                    return accumulator  # allow syntax to pass thru to pass thru
-                if result != None: # captured one complete command
-                    compiled = compile(accumulator[1:], '<stdin>', 'single') # this compilation allows for 1;1;1 to work as expected
-                    return compiled
+                    #traceback.print_exc()
+                    #accumulator = ""
+                    #continue
+                    return accumulator
 
+                if result == None:
+                    pass # incomplete but possibly valid command
+                else:
+                    return result
 
+    
     parent_frame = sys._getframe(1)
     local_frame = sys._getframe(0)
     local_frame.f_locals.update(parent_frame.f_locals)
