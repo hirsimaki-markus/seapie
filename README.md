@@ -9,7 +9,7 @@ _Seapie opens python prompt when you want to edit or view your program's state d
 
 ## Example
 
-Just add call to seapie.seapie() anywhere and magically modify your program's current state in current scope in prompt
+Just add call to seapie.seapie() anywhere and magically modify your program's current state in interactive prompt
 
 ```ruby
 >>> import seapie
