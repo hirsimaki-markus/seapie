@@ -5,11 +5,11 @@ _Seapie opens python prompt when you want to edit or view your program's state d
 
 # SEAPIE
 
-```SEAPIE``` stands for ``Scope Escaping Arbitrary Python Injection Executor``
+```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
 
 ## Example
 
-Just add call to seapie.seapie() anywhere and magically modify your current programs state
+Just add call to seapie.seapie() anywhere and magically modify your program's current state in current scope
 
 ```ruby
 >>> import seapie
