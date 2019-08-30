@@ -1,5 +1,5 @@
 _Have you ever wanted to debug something without bothering to learn how to use a real debugger?_  
-_Seapie opens python prompt when you need something quick, dirty and interactive_
+_Seapie opens python prompt when you want to edit your program's state during execution and then resume running_
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
@@ -12,7 +12,9 @@ You can call ``seapie()`` anywhere in your code to open python interpeter like c
 
 ## Example
 
-```
+Just add call to seapie.seapie() anywhere and magically modify locals
+
+```ruby
 >>> import seapie
 >>>
 >>> def test():
@@ -29,6 +31,7 @@ new value of x is 2
 
 ## Todo
 * Implement way to easily change scope inside the prompt
+* Add more !magic commands
 
 ## Known issues
 
