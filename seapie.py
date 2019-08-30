@@ -3,7 +3,7 @@ import ctypes
 import code
 import traceback
 
-def seapie2(scope=1):
+def seapie(scope=1):
     """Scope Escaping Arbitrary Python Injection Executor"""
     try:
         sys.ps1
