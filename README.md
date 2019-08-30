@@ -5,14 +5,11 @@ _Seapie opens python prompt when you want to edit your program's state during ex
 
 # SEAPIE
 
-
 ```SEAPIE``` stands for ``Scope Escaping Arbitrary Python Injection Executor``
-
-You can call ``seapie()`` anywhere in your code to open python interpeter like console that can arbitarily edit any locals
 
 ## Example
 
-Just add call to seapie.seapie() anywhere and magically modify locals
+Just add call to seapie.seapie() anywhere and magically modify your current programs state
 
 ```ruby
 >>> import seapie
@@ -48,7 +45,6 @@ There are few ways to circumvent this in your main program:
 * Assing placeholder to your objects beforehand
 * Reassing object to itself in main program to update symbol table: x = locals()["x"]
 * Use exec() in main program instead of directly calling to avoid optimization. Instead of calling x do: exec("x")
-
 
 ## Unlicensing
 Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019
