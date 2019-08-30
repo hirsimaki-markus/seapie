@@ -9,7 +9,7 @@ _Seapie opens python prompt when you want to edit or view your program's state d
 
 ## Example
 
-Just add call to seapie.seapie() anywhere and magically modify your program's current state in current scope
+Just add call to seapie.seapie() anywhere and magically modify your program's current state in current scope via "normal" prompt
 
 ```ruby
 >>> import seapie
@@ -29,6 +29,7 @@ new value of x is 2
 ## Todo
 * Implement way to easily change scope inside the prompt
 * Add more !magic commands
+* Make comments works as in python prompt
 
 ## Known issues
 
