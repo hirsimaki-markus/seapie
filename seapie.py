@@ -43,7 +43,7 @@ def seapie(scope=1):
     parent_globals = parent_frame.f_globals
     parent_locals = parent_frame.f_locals
 
-    print("SEAPIE v0.3 type !help for SEAPIE help")
+    print("SEAPIE v0.5 type !help for SEAPIE help")
     while True:
         codeblock = single_prompt()
         if codeblock == "!exit":
