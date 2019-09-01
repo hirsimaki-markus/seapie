@@ -1,5 +1,7 @@
-_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_  
+_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_
+
 _Seapie opens python prompt when you want to edit or view your program's state during execution and then resume running_
+_This also includes editing any local variables, and changing scope in current call stack_
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
