@@ -20,16 +20,15 @@ Just add call to seapie.seapie() anywhere and magically modify your program's cu
 ...     print("new value of x is", x)
 ...
 >>> test()
-SEAPIE v0.5 type !help for SEAPIE help
+SEAPIE v0.7 type !help for SEAPIE help
 >>> x = 2 # anow we change the value of x in scope of test()
 >>> !exit
 new value of x is 2
 ```
 
 ## Todo
-* Implement way to easily change scope inside the prompt
-* Add more !magic commands
 * Make comments works as in python prompt
+* Allow automagical editing global variables without going up in scope with !scope-
 
 ## Known issues
 
@@ -37,7 +36,7 @@ These are rather technical and should not bother you unless you introduce _compl
 these changes to actually persist into your program outside of the calling function scope. In global scope this doesn't happen
 nor does it happen for any objects that already have their name in symbol table (read: anything you can call somehow).
 
-Assinging completely new non-global objects via seapie prompt works but calling object that has only been defined in
+Assinging completely new non-global objects via seapie prompt works but calling said object that has only been defined in
 seapie prompt will result in NameError. This happens due to python optimizing local namespaces and as far as I know this
 cannot be solved within the scope of this project. Email me if you happen to have ideas about how to do it.
 
