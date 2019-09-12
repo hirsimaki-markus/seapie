@@ -5,18 +5,75 @@ import traceback
 import inspect
 import codeop
 
-def seapie(scope=1):
-    """Scope Escaping Arbitrary Python Injection Executor"""
-    try:
-        sys.ps1
-    except AttributeError:
-        sys.ps1 = ">>> "
-    try:
-        sys.ps2
-    except AttributeError:
-        sys.ps2 = "... "
+class Seapie:
+    """Container class for seapie() and its helper functions"""
+    def __init__(self):
+        try: sys.ps1
+        except AttributeError: sys.ps1 = ">>> "
+        try: sys.ps2
+        except AttributeError: sys.ps2 = "... "
+        self.scope = 2
+        self.prompt_open = True # allows magic_handler to break loop in seapie()
+        self.seapie()
 
-    def single_prompt():
+    def seapie(self):
+        """Main code injector function"""
+        print("SEAPIE v0.7 type !help for SEAPIE help")
+        while self.prompt_open:
+            parent_frame = sys._getframe(self.scope)
+            parent_globals = parent_frame.f_globals
+            parent_locals = parent_frame.f_locals
+            codeblock = self.single_prompt()
+            if isinstance(codeblock, str): # got magic string instead of code object
+                self.magic_handler(codeblock)
+            else:
+                try:
+                    exec(codeblock, parent_globals, parent_locals)
+                    ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent_frame), ctypes.c_int(1))
+                except Exception as error: # catch arbitary exceptions from exec
+                    traceback.print_exc()
+
+    def magic_handler(self, magicstring):
+        """Any magic strings starting with ! are handled here"""
+        if magicstring == "!exit":
+            self.prompt_open = False
+            return
+        elif magicstring == "!scope":
+            print(sys._getframe(self.scope+1).f_code.co_name)
+            return
+        elif magicstring == "!help":
+            print("SEAPIE v0.7 type !help for SEAPIE help")
+            print("commands: !help, !exit, !scope, !scope+, !scope-, !tree")
+            print("scope commands move up(-) or down(+) one call stack level")
+            return
+        elif magicstring == "!scope+":
+            if self.scope >= 3:
+                self.scope -= 1
+            else:
+                print("cant go higher than current call")
+            return
+        elif magicstring == "!scope-":
+            try:
+                sys._getframe(self.scope+2) # skip over seapie.seapie to empty space. disallows hitting seapie. change to +1 to allow hittig seapie itself
+            except ValueError:
+                print("call stack is not deep enough")
+            else:
+                self.scope += 1
+            return
+        elif magicstring == "!tree":
+            for frame in reversed(inspect.stack()[3:]):
+                try:
+                    context = frame.code_context[0].strip()
+                except TypeError:
+                    context = '""'
+                print(frame.function, (10-len(str(frame.function)))*" ", "calling", context, "as ...")
+            print("seapie")
+            return
+        else:
+            print("Unknown magic command!")
+            return
+
+    def single_prompt(self):
         """Emulates python interactive prompt to capture one complete and valid command"""
         accumulator = ""
         raw_text = ""
@@ -30,13 +87,8 @@ def seapie(scope=1):
                 print("\nKeyboardInterrupt")
                 accumulator = ""
                 continue
-            if accumulator == "": # if reading first line
-                if raw_text == "!exit": return "!exit" # capture magic values
-                if raw_text == "!scope+": return "!scope+" # capture magic values
-                if raw_text == "!scope-": return "!scope-" # capture magic values
-                if raw_text == "!help": return "!help" # capture magic values
-                if raw_text == "!tree": return "!tree" # capture magic values
-                if raw_text == "!scope": return "!scope" # capture magic values
+            if accumulator == "" and raw_text.startswith("!"): # if reading first line
+                return raw_text
             else:
                 if raw_text == "": # this block should catch failing empty lines enterred after def and such
                     try:
@@ -46,7 +98,6 @@ def seapie(scope=1):
                         accumulator = ""
                         continue
             accumulator += "\n"+raw_text # input cant read newline. add it manually
-
             try:
                 result = code.compile_command(accumulator)
             except SyntaxError: # allow incorrect command to just pass thru
@@ -55,47 +106,3 @@ def seapie(scope=1):
                 pass # incomplete but possibly valid command
             else:
                 return result
-
-    print("SEAPIE v0.5 type !help for SEAPIE help")
-    while True:
-        parent_frame = sys._getframe(scope)
-        parent_globals = parent_frame.f_globals
-        parent_locals = parent_frame.f_locals
-        codeblock = single_prompt()
-        if codeblock == "!exit":
-            break # this block allows reacting to magic values
-        if codeblock == "!scope":
-            print(sys._getframe(scope).f_code.co_name)
-            continue
-        if codeblock == "!help":
-            print("SEAPIE v0.7 type !help for SEAPIE help")
-            print("commands: !help, !exit, !scope, !scope+, !scope-, !tree")
-            print("scope commands move up(-) or down(+) one call stack level")
-            continue
-        if codeblock == "!scope+":
-            if scope >= 1:
-                scope -= 1
-            else:
-                print("cant go higher than current call")
-            continue
-        if codeblock == "!scope-":
-            try:
-                sys._getframe(scope+2) # skip over seapie.seapie to empty space. disallows hitting seapie. change to +1 to allow hittig seapie itself
-            except ValueError:
-                print("call stack is not deep enough")
-            else:
-                scope += 1
-            continue
-        if codeblock == "!tree":
-            for frame in reversed(inspect.stack()[1:]):
-                try:
-                    context = frame.code_context[0].strip()
-                except TypeError:
-                    context = '""'
-                print(frame.function, (10-len(str(frame.function)))*" ", "calling", context, "as ...")
-            continue
-        try:
-            exec(codeblock, parent_globals, parent_locals)
-            ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent_frame), ctypes.c_int(1))
-        except Exception as error: # catch arbitary exceptions from exec
-            traceback.print_exc()
