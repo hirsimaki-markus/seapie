@@ -31,7 +31,6 @@ new value of x is 2
 ## Todo
 * Make comments works as in python prompt
 * Allow automagical editing global variables without going up in scope with !scope-
-* Add support for line stepping code
 
 ## Known issues
 
