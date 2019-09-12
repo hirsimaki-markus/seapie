@@ -1,5 +1,3 @@
-<meta name="google-site-verification" content="ZILuFZbcbwcGRsZXPF1P7WCdPVgeFiRLT5qElZSB9mQ" />
-
 _Have you ever wanted to debug something without bothering to learn how to use a real debugger?_
 
 _Seapie opens python prompt when you want to edit or view your program's state during execution and then resume running_
