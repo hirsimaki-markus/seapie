@@ -18,7 +18,7 @@ class Seapie:
 
     def seapie(self):
         """Main code injector function"""
-        print("SEAPIE v0.7 type !help for SEAPIE help")
+        print("SEAPIE v0.8 type !help for SEAPIE help")
         while self.prompt_open:
             parent_frame = sys._getframe(self.scope)
             parent_globals = parent_frame.f_globals
@@ -42,7 +42,7 @@ class Seapie:
             print(sys._getframe(self.scope+1).f_code.co_name)
             return
         elif magicstring == "!help":
-            print("SEAPIE v0.7 type !help for SEAPIE help")
+            print("SEAPIE v0.8 type !help for SEAPIE help")
             print("commands: !help, !exit, !scope, !scope+, !scope-, !tree")
             print("scope commands move up(-) or down(+) one call stack level")
             return
