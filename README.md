@@ -22,7 +22,7 @@ Just add call to seapie.seapie() anywhere and magically modify your program's cu
 ...     print("new value of x is", x)
 ...
 >>> test()
-SEAPIE v0.7 type !help for SEAPIE help
+SEAPIE v0.8 type !help for SEAPIE help
 >>> x = 2 # anow we change the value of x in scope of test()
 >>> !exit
 new value of x is 2
@@ -31,6 +31,7 @@ new value of x is 2
 ## Todo
 * Make comments works as in python prompt
 * Allow automagical editing global variables without going up in scope with !scope-
+* Add support for line stepping code
 
 ## Known issues
 
