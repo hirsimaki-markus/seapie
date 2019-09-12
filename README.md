@@ -14,11 +14,11 @@ _This also includes editing any local variables, and changing scope in current c
 Just add call to seapie.seapie() anywhere and magically modify your program's current state in interactive prompt
 
 ```ruby
->>> import seapie
+>>> from seapie import Seapie as seapie
 >>>
 >>> def test():
 ...     x = 1
-...     seapie.seapie()
+...     seapie()
 ...     print("new value of x is", x)
 ...
 >>> test()
