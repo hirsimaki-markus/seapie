@@ -7,6 +7,9 @@ __Seapie can do that__
 
 # SEAPIE 1.0
 
+<img src="./images/lisence.svg"> <img src="./images/lisence.svg">
+
+
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
 
 ## Example
@@ -48,4 +51,4 @@ There are few ways to circumvent this in your main program:
 * Use exec() in main program instead of directly calling to avoid optimization. Instead of calling x do: exec("x")
 
 ## Unlicensing
-Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019
+Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019
