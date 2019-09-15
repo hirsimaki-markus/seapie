@@ -7,7 +7,7 @@ __Seapie can do that__
 
 # SEAPIE 1.0
 
-<img src="./images/lisence.svg"> <img src="./images/lisence.svg">
+<img src="./images/version.svg"> <img src="./images/releasedate.svg"> <img src="./images/python-ver.svg"> <img src="./images/size.svg">  <img src="./images/lisence.svg"> <img src="./images/implementation.svg">
 
 
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
