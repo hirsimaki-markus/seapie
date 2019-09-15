@@ -1,3 +1,29 @@
+"""Seapie is debugger like tool with ability to escape scopes in call stack
+
+example use:
+    from seapie import Seapie as seapie
+
+    def test():
+        seapie(1, "a_variable_in_scope_of_test2_only = 'hacked'")
+        # seapie escapes the scopes and modifies it anyways
+
+    def test2():
+        a_variable_in_scope_of_test2_only = 1
+        test()
+        print(a_variable_in_scope_of_test2_only)
+
+    test2()
+
+example use2:
+    from seapie import Seapie as seapie
+
+    # your program here
+    # ...
+    seapie()  # and use !help when the prompt opens
+    # more of your program here
+    # ...
+"""
+
 import sys
 import ctypes
 import code
@@ -5,104 +31,157 @@ import traceback
 import inspect
 import codeop
 
+
 class Seapie:
-    """Container class for seapie() and its helper functions"""
-    def __init__(self):
-        try: sys.ps1
-        except AttributeError: sys.ps1 = ">>> "
-        try: sys.ps2
-        except AttributeError: sys.ps2 = "... "
-        self.scope = 2
-        self.prompt_open = True # allows magic_handler to break loop in seapie()
+    """Container class for seapie() and its helper functions.
+
+    Usage:
+        from seapie import Seapie as seapie
+        seapie(steps=0, executable=None)
+
+        # where "steps" means how many callstack frames seapie is supposed to
+        # escape. 0 means current namespace, 1 means parent namespace etc.
+        #
+        # and where "executable" is either code object or executable string.
+        # if no "executable" argument is given seapie opens interactive prompt.
+    """
+
+    def __init__(self, steps=0, executable=None):
+        """Initializes a seapie instance. seapie objects should not be saved"""
+        try:  # enables support for sys.ps1
+            sys.ps1
+        except AttributeError:
+            sys.ps1 = ">>> "
+        try:  # enables support for sys.ps2
+            sys.ps2
+        except AttributeError:
+            sys.ps2 = "... "
+        self.scope = steps+2          # 2+ avoids going into seapie itself
+        self.prompt_open = True       # allows magic_handler to break repl
+        self.executable = executable  # seapie runs only this if not none
         self.seapie()
 
     def seapie(self):
-        """Main code injector function"""
-        print("SEAPIE v0.8 type !help for SEAPIE help")
+        """Main code injector loop"""
+        print("====  SEAPIE v1.0 type !help for SEAPIE help  ====")
         while self.prompt_open:
-            parent_frame = sys._getframe(self.scope)
-            parent_globals = parent_frame.f_globals
-            parent_locals = parent_frame.f_locals
-            codeblock = self.single_prompt()
-            if isinstance(codeblock, str): # got magic string instead of code object
-                self.magic_handler(codeblock)
+            parent = sys._getframe(self.scope)  # frame enclosing seapie() call
+            parent_globals = parent.f_globals
+            parent_locals = parent.f_locals
+            if self.executable:                 # if executable block is given
+                codeblock = self.executable     # only the executable is ran
+                self.prompt_open = False        # and prompt closes after it
             else:
-                try:
-                    exec(codeblock, parent_globals, parent_locals)
-                    ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent_frame), ctypes.c_int(1))
-                except Exception as error: # catch arbitary exceptions from exec
-                    traceback.print_exc()
+                codeblock = self.single_prompt()
+            if isinstance(codeblock, str):  # got string or failed code object
+                if codeblock[0] == "!":     # got magic string
+                    self.magic_handler(codeblock)
+                    continue
+            try:
+                exec(codeblock, parent_globals, parent_locals)
+                # the following call forces update to locals()
+                # adding new variables is allowed but calling them requires
+                # some indirection like using exec() or a placeholder
+                # otherwise you will get nameerror
+                ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent),
+                                                      ctypes.c_int(1))
+            except:  # catch arbitary exceptions from exec
+                traceback.print_exc()
+        print("========  closing the interactive prompt  ========")
 
     def magic_handler(self, magicstring):
         """Any magic strings starting with ! are handled here"""
         if magicstring == "!exit":
             self.prompt_open = False
-            return
         elif magicstring == "!scope":
             print(sys._getframe(self.scope+1).f_code.co_name)
-            return
         elif magicstring == "!help":
-            print("SEAPIE v0.8 type !help for SEAPIE help")
-            print("commands: !help, !exit, !scope, !scope+, !scope-, !tree")
-            print("scope commands move up(-) or down(+) one call stack level")
-            return
-        elif magicstring == "!scope+":
-            if self.scope >= 3:
+            print("SEAPIE v1.0 type !help for SEAPIE help\n")
+            print("!help   : this message")
+            print("!exit   : exit seapie and continue exection")
+            print("!scope  : view currently used namespace from callstack")
+            print("!tree   : view current call stack")
+            print("!scope+ : increase scope, move towards global namespace")
+            print("!scope- : decrease scope, move towards local namespace")
+        elif magicstring == "!scope-":
+            if self.scope >= 3:  # avoid going into seapie module itself
                 self.scope -= 1
             else:
                 print("cant go higher than current call")
-            return
-        elif magicstring == "!scope-":
+        elif magicstring == "!scope+":
             try:
-                sys._getframe(self.scope+2) # skip over seapie.seapie to empty space. disallows hitting seapie. change to +1 to allow hittig seapie itself
+                sys._getframe(self.scope+2)  # avoid calling nonexisting frame
             except ValueError:
                 print("call stack is not deep enough")
             else:
                 self.scope += 1
-            return
         elif magicstring == "!tree":
-            for frame in reversed(inspect.stack()[3:]):
+            for frame in reversed(inspect.stack()[3:]):  # 3: excludes seapie
                 try:
                     context = frame.code_context[0].strip()
                 except TypeError:
-                    context = '""'
-                print(frame.function, (10-len(str(frame.function)))*" ", "calling", context, "as ...")
-            print("seapie")
-            return
+                    context = '""'  # empty context at the end of stack
+                padding = (10-len(str(frame.function)))*" "
+                print(frame.function, padding, "calling", context, "as ...")
+            print("seapie")  # hardcode final line of !tree
         else:
             print("Unknown magic command!")
-            return
 
-    def single_prompt(self):
-        """Emulates python interactive prompt to capture one complete and valid command"""
+    @staticmethod
+    def single_prompt():
+        """Interactive prompt that returns single expression/statement"""
         accumulator = ""
         raw_text = ""
         while True:
             try:
-                if not accumulator: # if on first line
+                if not accumulator:  # if on first line of incoming block
                     raw_text = input(str(sys.ps1))
-                else: # if on continuing line
+                else:  # if on continuing line
                     raw_text = input(str(sys.ps2))
-            except KeyboardInterrupt: # emulate behaviour of ctrl+c
+            except KeyboardInterrupt:  # emulate behaviour of ctrl+c
                 print("\nKeyboardInterrupt")
                 accumulator = ""
                 continue
-            if accumulator == "" and raw_text.startswith("!"): # if reading first line
+            if accumulator == "" and raw_text.startswith("!"):  # got magic
                 return raw_text
-            else:
-                if raw_text == "": # this block should catch failing empty lines enterred after def and such
-                    try:
-                        codeop.compile_command("\n"+accumulator, "<input>", "eval")
-                    except Exception as error: # catch arbitary exceptions from exec
-                        traceback.print_exc()
-                        accumulator = ""
-                        continue
-            accumulator += "\n"+raw_text # input cant read newline. add it manually
+            # this block should catch situation where two or more newlines
+            # are entered during function definition or other such things
+            if raw_text == "":
+                try:
+                    codeop.compile_command("\n"+accumulator, "<input>", "eval")
+                except:  # catch exceptions compiling and reset
+                    traceback.print_exc()
+                    accumulator = ""
+                    continue
+            accumulator += "\n"+raw_text  # manually add newline after inputs
             try:
                 result = code.compile_command(accumulator)
-            except SyntaxError: # allow incorrect command to just pass thru
+            except SyntaxError:  # allow incorrect commands to just pass thru
                 return accumulator
-            if result == None:
-                pass # incomplete but possibly valid command
+            if result is None:
+                pass  # incomplete but possibly valid command
             else:
                 return result
+
+if __name__ == "__main__":
+    print("""
+    # You should probably not be running this file as is.
+    # Unless you wanted to open seapie prompt outside of your program.
+    # try something like the following instead ?
+
+    from seapie import Seapie as seapie
+
+    def test():
+        seapie(1, "a_variable_in_scope_of_test2_only = 'hacked'")
+        # seapie escapes the scopes and modifies it anyways
+
+    def test2():
+        a_variable_in_scope_of_test2_only = 1
+        test()
+        print(a_variable_in_scope_of_test2_only)
+
+    test2()
+
+    # or maybe you wanted to have the prompt stay open? use the following
+
+    seapie()""")
