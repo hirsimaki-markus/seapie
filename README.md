@@ -1,6 +1,7 @@
-_Have you ever wanted to escape current scope to modify enclosing variables?_  
-_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_  
-_Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_  
+_Have you ever wanted to escape current scope to modify enclosing variables?_\
+_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_\
+_Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
+
 __Seapie can do that__
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
@@ -14,23 +15,18 @@ __Seapie can do that__
 Just add call to seapie() anywhere and magically modify your program's current state in interactive prompt
 
 ```ruby
-C:\Users\MAKE\Desktop\SEAPIE\SEAPIE> cat myprogram.py
+C:\Users\Me\SEAPIE> type demo.py
 from seapie import Seapie as seapie
-def test_func():
-    seapie()
+def test():
+    seapie(1, "cant_modify_me = 'i can actually'")
+    # you could use 'seapie()' for interactive mode instead of arguments
 def parent_of_test():
-    you_cant_modify_me_from_test_func = "x"
-    test_func()
+    cant_modify_me = "x"
+    test()
     print(you_cant_modify_me_from_test_func)
-parent_of_test()
+ parent_of_test()
 
-
-C:\Users\MAKE\Desktop\SEAPIE\SEAPIE>python myprogram.py
-====  SEAPIE v1.0 type !help for SEAPIE help  ====
->>> !scope+
->>> you_cant_modify_me_from_test_func = "i can actually"
->>> !exit
-========  closing the interactive prompt  ========
+C:\Users\Me\SEAPIE> python demo.py
 i can actually
 ```
 ## Todo
