@@ -1,7 +1,6 @@
 _Have you ever wanted to escape current scope to modify enclosing variables?_\
 _Have you ever wanted to debug something without bothering to learn how to use a real debugger?_\
 _Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
-
 __Seapie can do that__
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
