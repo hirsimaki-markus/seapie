@@ -1,36 +1,41 @@
-_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_
+_Have you ever wanted to escape current scope to modify enclosing variables?_  
+_Have you ever wanted to debug something without bothering to learn how to use a real debugger?_  
+_Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_  
 
-_Seapie opens python prompt when you want to edit or view your program's state during execution and then resume running_
-_This also includes editing any local variables, and changing scope in current call stack_
+_Seapie can do that_
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
-# SEAPIE
+# SEAPIE 1.0
 
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
 
 ## Example
 
-Just add call to seapie.seapie() anywhere and magically modify your program's current state in interactive prompt
+Just add call to seapie() anywhere and magically modify your program's current state in interactive prompt
 
 ```ruby
->>> from seapie import Seapie as seapie
->>>
->>> def test():
-...     x = 1
-...     seapie()
-...     print("new value of x is", x)
-...
->>> test()
-SEAPIE v0.8 type !help for SEAPIE help
->>> x = 2 # anow we change the value of x in scope of test()
->>> !exit
-new value of x is 2
-```
+C:\Users\MAKE\Desktop\SEAPIE\SEAPIE> cat myprogram.py
+from seapie import Seapie as seapie
+def test_func():
+    seapie()
+def parent_of_test():
+    you_cant_modify_me_from_test_func = "x"
+    test_func()
+    print(you_cant_modify_me_from_test_func)
+parent_of_test()
 
+
+C:\Users\MAKE\Desktop\SEAPIE\SEAPIE>python myprogram.py
+====  SEAPIE v1.0 type !help for SEAPIE help  ====
+>>> !scope+
+>>> you_cant_modify_me_from_test_func = "i can actually"
+>>> !exit
+========  closing the interactive prompt  ========
+i can actually
+```
 ## Todo
-* Make comments works as in python prompt
-* Allow automagical editing global variables without going up in scope with !scope-
+* No idea actually. Send me email if you have suggestions
 
 ## Known issues
 
