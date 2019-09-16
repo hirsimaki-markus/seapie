@@ -11,11 +11,15 @@ _Have you ever wanted to just open the normal interactive prompt inside of your 
 
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
 
+## Installation
+
+```pip install seapie```
+
 ## Example
 
 Just add call to seapie() anywhere and magically modify your program's current state in interactive prompt
 
-```ruby
+```python
 C:\Users\Me\SEAPIE> type demo.py
 from seapie import Seapie as seapie
 def test():
