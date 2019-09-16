@@ -19,7 +19,7 @@ _Have you ever wanted to just open the normal interactive prompt inside of your 
 
 Just add call to seapie() anywhere and magically modify your program's current state in interactive prompt
 
-```python
+```ruby
 C:\Users\Me\SEAPIE> type demo.py
 from seapie import Seapie as seapie
 def test():
