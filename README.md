@@ -4,7 +4,7 @@ _Have you ever wanted to just open the normal interactive prompt inside of your 
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
-# SEAPIE 1.1
+# SEAPIE 1.2
 
 <img src="./images/version.svg"> <img src="./images/releasedate.svg"> <img src="./images/python-ver.svg"> <img src="./images/size.svg">  <img src="./images/lisence.svg"> <img src="./images/implementation.svg">
 
