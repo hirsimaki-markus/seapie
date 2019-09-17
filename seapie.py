@@ -63,7 +63,8 @@ class Seapie:
 
     def seapie(self):
         """Main code injector loop"""
-        print("====  SEAPIE v1.0 type !help for SEAPIE help  ====")
+        if self.executable is None:
+            print("=======[  SEAPIE v1.1 type !help for SEAPIE help  ]=======")
         while self.prompt_open:
             parent = sys._getframe(self.scope)  # frame enclosing seapie() call
             parent_globals = parent.f_globals
@@ -85,9 +86,10 @@ class Seapie:
                 # otherwise you will get nameerror
                 ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent),
                                                       ctypes.c_int(1))
-            except:  # catch arbitary exceptions from exec
+            except Exception:  # catch arbitary exceptions from exec
                 traceback.print_exc()
-        print("========  closing the interactive prompt  ========")
+        if self.executable is None:
+            print("=======[  Closing SEAPIE v1.1 prompt. Continuing  ]=======")
 
     def magic_handler(self, magicstring):
         """Any magic strings starting with ! are handled here"""
@@ -96,7 +98,7 @@ class Seapie:
         elif magicstring == "!scope":
             print(sys._getframe(self.scope+1).f_code.co_name)
         elif magicstring == "!help":
-            print("SEAPIE v1.0 type !help for SEAPIE help\n")
+            print("SEAPIE v1.1 type !help for SEAPIE help\n")
             print("!help   : this message")
             print("!exit   : exit seapie and continue exection")
             print("!scope  : view currently used namespace from callstack")
@@ -116,14 +118,9 @@ class Seapie:
             else:
                 self.scope += 1
         elif magicstring == "!tree":
-            for frame in reversed(inspect.stack()[3:]):  # 3: excludes seapie
-                try:
-                    context = frame.code_context[0].strip()
-                except TypeError:
-                    context = '""'  # empty context at the end of stack
-                padding = (10-len(str(frame.function)))*" "
-                print(frame.function, padding, "calling", context, "as ...")
-            print("seapie")  # hardcode final line of !tree
+            print()
+            for call in traceback.format_stack()[:-3]:
+                print(call)
         else:
             print("Unknown magic command!")
 
@@ -148,7 +145,8 @@ class Seapie:
             # are entered during function definition or other such things
             if raw_text == "":
                 try:
-                    codeop.compile_command("\n"+accumulator, "<input>", "eval")
+                    accumulator = "\n"+accumulator
+                    codeop.compile_command(accumulator, "<input>", "single")
                 except:  # catch exceptions compiling and reset
                     traceback.print_exc()
                     accumulator = ""
@@ -165,23 +163,23 @@ class Seapie:
 
 if __name__ == "__main__":
     print("""
-    # You should probably not be running this file as is.
-    # Unless you wanted to open seapie prompt outside of your program.
-    # try something like the following instead ?
+    # You should probably not be running this file as is unless you wanted to
+    # open seapie prompt outside of your program. try the following in your app
+    # as using seapie from the interactive prompt might cause problems
 
     from seapie import Seapie as seapie
-
     def test():
         seapie(1, "a_variable_in_scope_of_test2_only = 'hacked'")
         # seapie escapes the scopes and modifies it anyways
-
     def test2():
         a_variable_in_scope_of_test2_only = 1
         test()
         print(a_variable_in_scope_of_test2_only)
-
     test2()
-
-    # or maybe you wanted to have the prompt stay open? use the following
-
-    seapie()""")
+    """)
+    def test():
+        Seapie()
+    def test2():
+        a_variable_in_scope_of_test2_only = 1
+        test()
+    test2()
