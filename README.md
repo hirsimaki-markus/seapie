@@ -4,7 +4,7 @@ _Have you ever wanted to just open the normal interactive prompt inside of your 
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
-# SEAPIE 1.0
+# SEAPIE 1.1
 
 <img src="./images/version.svg"> <img src="./images/releasedate.svg"> <img src="./images/python-ver.svg"> <img src="./images/size.svg">  <img src="./images/lisence.svg"> <img src="./images/implementation.svg">
 
@@ -48,9 +48,9 @@ seapie prompt will result in NameError. This happens due to python optimizing lo
 cannot be solved within the scope of this project. Email me if you happen to have ideas about how to do it.
 
 There are few ways to circumvent this in your main program:
-* Assing, import and define your objects beforehand
-* Assing placeholder to your objects beforehand
-* Reassing object to itself in main program to update symbol table: x = locals()["x"]
+* Assingn, import and define your objects beforehand
+* Assingn placeholder to your objects beforehand
+* Reassign object to itself in main program to update symbol table: x = locals()["x"]
 * Use exec() in main program instead of directly calling to avoid optimization. Instead of calling x do: exec("x")
 
 ## Unlicensing
