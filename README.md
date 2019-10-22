@@ -26,9 +26,9 @@ def test():
     seapie(1, "cant_modify_me = 'i can actually'")
     # you could use 'seapie()' for interactive mode instead of arguments
 def parent_of_test():
-    cant_modify_me = "x"
+    cant_modify_me = "cant modify me!"
     test()
-    print(you_cant_modify_me_from_test_func)
+    print(cant_modify_me)
  parent_of_test()
 
 C:\Users\Me\SEAPIE> python demo.py
