@@ -147,8 +147,6 @@ class Seapie:
                 try:
                     accumulator = "\n"+accumulator
                     codeop.compile_command(accumulator, "<input>", "single")
-                except EOFError:
-                    exit(1)
                 except:  # catch exceptions compiling and reset
                     traceback.print_exc()
                     accumulator = ""
