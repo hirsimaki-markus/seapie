@@ -64,7 +64,7 @@ class Seapie:
     def seapie(self):
         """Main code injector loop"""
         if self.executable is None:
-            print("=======[  SEAPIE v1.1 type !help for SEAPIE help  ]=======")
+            print("=======[  SEAPIE v1.2 type !help for SEAPIE help  ]=======")
         while self.prompt_open:
             parent = sys._getframe(self.scope)  # frame enclosing seapie() call
             parent_globals = parent.f_globals
@@ -139,6 +139,8 @@ class Seapie:
                 print("\nKeyboardInterrupt")
                 accumulator = ""
                 continue
+            except EOFError:  # emulate behaviour of ctrl+z
+                sys.exit(1)
             if accumulator == "" and raw_text.startswith("!"):  # got magic
                 return raw_text
             # this block should catch situation where two or more newlines
