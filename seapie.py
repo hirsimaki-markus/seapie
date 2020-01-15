@@ -97,7 +97,10 @@ class Seapie:
             # normal locals() cant be used here. it displays wrong scope.
             frame = sys._getframe(2)
             print("Locals of", frame.f_code.co_name)
-            max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
+            try:
+                max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
+            except ValueError: # there are no keys
+                return
             for name, value in frame.f_locals.items():
                 pad = (max_pad-len(name))*" "
                 print(name + pad, value)
@@ -105,7 +108,10 @@ class Seapie:
             # normal globals() cant be used here. it displays wrong scope.
             frame = sys._getframe(2)
             print("Globals of", frame.f_code.co_name)
-            max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
+            try:
+                max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
+            except ValueError: # there are no keys
+                return
             for name, value in frame.f_globals.items():
                 pad = (max_pad-len(name))*" "
                 print(name + pad, value)
@@ -172,7 +178,7 @@ except AttributeError:
 
 
 def trace_calls(frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
-    print("ollaan tracecallssissa!", frame.f_code)
+    print("Entering scope",  frame.f_code.co_name)
     return Seapie._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
 
