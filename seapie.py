@@ -31,6 +31,8 @@ class SeapieReplExitException(Exception):
 class Seapie:
     """Container class for seapie() and its helper functions."""
 
+    steptill_condition = None
+
     def __init__(self):
         """Initializes a seapie instance. seapie objects should not be initialized as the class is only a logical collection of functons"""
         # this behaviour is chosen so that code stepping can be implemented easier
@@ -40,13 +42,26 @@ class Seapie:
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
         while True:
-            codeblock = cls.single_prompt()
+            if cls.steptill_condition is None:
+                codeblock = cls.single_prompt()
+            else:
+                try:
+                    if eval(cls.steptill_condition, frame.f_globals, frame.f_locals):
+                        cls.steptill_condition = None
+                        codeblock = cls.single_prompt()
+                    else:
+                        codeblock = "!step"
+                except NameError: # could not find variable to even try to satisfy condition. skipping.
+                    codeblock = "!step"
+                
+            # codeblock = cls.single_prompt()
             if isinstance(codeblock, str):  # got magic string
                 try:
                     cls.magic_handler(codeblock)
                     continue # magic is handled. get new command
                 except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
-                    return cls._repl_and_tracelines
+                    return
+                    #return cls._repl_and_tracelines # this might be needed but not really??
             else:
                 #try:
                     cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
@@ -73,8 +88,8 @@ class Seapie:
                                                       ctypes.c_int(1))
 
 
-    @staticmethod
-    def magic_handler(magicstring):
+    @classmethod
+    def magic_handler(cls, magicstring):
         """Any magic strings starting with ! are handled here"""
         if magicstring == "!peek":
            print("Next line to be executed is", sys._getframe(2).f_lineno)
@@ -82,6 +97,8 @@ class Seapie:
             #print("Executing line", frame.f_lineno)
             print("Executed line", sys._getframe(2).f_lineno)
             raise SeapieReplExitException
+        elif magicstring[:9] == "!steptill":
+            cls.steptill_condition = magicstring[10:]
         elif magicstring == "!exit":
             #print("Executing line", frame.f_lineno)
             print("Continuing from line", sys._getframe(2).f_lineno)
@@ -95,40 +112,43 @@ class Seapie:
         elif magicstring == "!locals":
             # normal locals() cant be used here. it displays wrong scope.
             frame = sys._getframe(2)
-            print("Locals of", frame.f_code.co_name)
+            print()
             try:
                 max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
             except ValueError: # there are no keys
                 return
             for name, value in frame.f_locals.items():
                 pad = (max_pad-len(name))*" "
-                print(name + pad, value)
+                print("   ", name + pad, "=", value)
+            print()
         elif magicstring == "!globals":
             # normal globals() cant be used here. it displays wrong scope.
             frame = sys._getframe(2)
-            print("Globals of", frame.f_code.co_name)
+            print()
             try:
                 max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
             except ValueError: # there are no keys
                 return
             for name, value in frame.f_globals.items():
                 pad = (max_pad-len(name))*" "
-                print(name + pad, value)
+                print("   ", name + pad, "=", value)
+            print()
         elif magicstring == "!scope":
             print(sys._getframe(2).f_code.co_name)
         elif magicstring == "!help":
             print()
-            print("This prompt works like you would expect for python")
-            print("prompt to work if it was opened on the line seapie() was called")
+            print("   ", "This prompt works like you would expect for python")
+            print("   ", "prompt to work if it was opened on the line seapie() was called")
             print()
-            print("!help    : this message")
-            print("!peek    : show what line will be executed on next tep")
-            print("!step    : execute the next line of source code")
-            print("!exit    : closes seapie prompt and stops tracing")
-            print("!tree    : views current call stack excluding seapie")
-            print("!locals  : prettyprint locals()")
-            print("!globals : prettyprint globals()")
-            print("!scope   : display the name of the current scope")
+            print("   ", "!help         : this message")
+            print("   ", "!peek         : show what line will be executed on next tep")
+            print("   ", "!step         : execute the next line of source code")
+            print("   ", "!steptill x==y: same as above until any given condition is true")
+            print("   ", "!exit         : closes seapie prompt and stops tracing")
+            print("   ", "!tree         : views current call stack excluding seapie")
+            print("   ", "!locals       : prettyprint locals()")
+            print("   ", "!globals      : prettyprint globals()")
+            print("   ", "!scope        : display the name of the current scope")
             print()
         else:
             print("Unknown magic command!")
@@ -191,7 +211,7 @@ except AttributeError:
 
 
 def trace_calls(frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
-    print("Entering scope",  frame.f_code.co_name)
+    # print("Entering scope",  frame.f_code.co_name) make this conditinal?
     return Seapie._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
 
