@@ -75,6 +75,12 @@ class Seapie:
             #print("Executing line", frame.f_lineno)
             print("Executed line", sys._getframe(2).f_lineno)
             raise SeapieReplExitException
+        if magicstring == "!exit":
+            #print("Executing line", frame.f_lineno)
+            print("Continuing from line", sys._getframe(2).f_lineno)
+            sys.settrace(None)
+            sys._getframe(2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            raise SeapieReplExitException
         elif magicstring == "!help":
             print("SEAPIE v1.1 type !help for SEAPIE help\n")
             print("!help    : this message")
@@ -91,14 +97,18 @@ class Seapie:
             # normal locals() cant be used here. it displays wrong scope.
             frame = sys._getframe(2)
             print("Locals of", frame.f_code.co_name)
-            for local in frame.f_locals:
-                print(local)
+            max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
+            for name, value in frame.f_locals.items():
+                pad = (max_pad-len(name))*" "
+                print(name + pad, value)
         elif magicstring == "!globals":
             # normal globals() cant be used here. it displays wrong scope.
             frame = sys._getframe(2)
             print("Globals of", frame.f_code.co_name)
-            for local in frame.f_globals:
-                print(local)
+            max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
+            for name, value in frame.f_globals.items():
+                pad = (max_pad-len(name))*" "
+                print(name + pad, value)
         elif magicstring == "!scope":
             print(sys._getframe(2).f_code.co_name)
         else:
@@ -137,7 +147,10 @@ class Seapie:
             try:
                 result = code.compile_command(accumulator)
             except SyntaxError:  # allow incorrect commands to just pass thru
-                return accumulator
+                # return accumulator # tämä muutos alla korjaa lambdat???
+                traceback.print_exc()
+                accumulator = ""
+                continue
             if result is None:
                 pass  # incomplete but possibly valid command
             else:
@@ -169,3 +182,4 @@ arbitary_scope_exec = Seapie.arbitary_scope_exec
 def seapie():
     sys.settrace(trace_calls)
     sys._getframe(1).f_trace = Seapie._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+
