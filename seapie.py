@@ -76,24 +76,18 @@ class Seapie:
     @staticmethod
     def magic_handler(magicstring):
         """Any magic strings starting with ! are handled here"""
-        if magicstring == "!step":
+        if magicstring == "!peek":
+           print("Next line to be executed is", sys._getframe(2).f_lineno)
+        elif magicstring == "!step":
             #print("Executing line", frame.f_lineno)
             print("Executed line", sys._getframe(2).f_lineno)
             raise SeapieReplExitException
-        if magicstring == "!exit":
+        elif magicstring == "!exit":
             #print("Executing line", frame.f_lineno)
             print("Continuing from line", sys._getframe(2).f_lineno)
             sys.settrace(None)
             sys._getframe(2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
             raise SeapieReplExitException
-        elif magicstring == "!help":
-            print("SEAPIE v1.1 type !help for SEAPIE help\n")
-            print("!help    : this message")
-            print("!step    : step")
-            print("!tree    : view current call stack")
-            print("!locals  : prettyprint locals")
-            print("!globals : prettyprint globals")
-            print("!scope   : display the name of the current scope")
         elif magicstring == "!tree":
             print()
             for call in traceback.format_stack()[:-2]:
@@ -122,6 +116,20 @@ class Seapie:
                 print(name + pad, value)
         elif magicstring == "!scope":
             print(sys._getframe(2).f_code.co_name)
+        elif magicstring == "!help":
+            print()
+            print("This prompt works like you would expect for python")
+            print("prompt to work if it was opened on the line seapie() was called")
+            print()
+            print("!help    : this message")
+            print("!peek    : show what line will be executed on next tep")
+            print("!step    : execute the next line of source code")
+            print("!exit    : closes seapie prompt and stops tracing")
+            print("!tree    : views current call stack excluding seapie")
+            print("!locals  : prettyprint locals()")
+            print("!globals : prettyprint globals()")
+            print("!scope   : display the name of the current scope")
+            print()
         else:
             print("Unknown magic command!")
 
