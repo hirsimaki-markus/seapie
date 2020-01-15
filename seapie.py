@@ -29,107 +29,78 @@ class SeapieReplExitException(Exception):
     pass
 
 class Seapie:
-    """Container class for seapie() and its helper functions.
-
-    Usage:
-        from seapie import Seapie as seapie
-        seapie(steps=0, executable=None)
-
-        # where "steps" means how many callstack frames seapie is supposed to
-        # escape. 0 means current namespace, 1 means parent namespace etc.
-        #
-        # and where "executable" is either code object or executable string.
-        # if no "executable" argument is given seapie opens interactive prompt.
-    """
-
-    # __instance = None
-    scope = 1          # 2+ avoids going into seapie itself
-    # executable = executable  # seapie runs only this if not none
+    """Container class for seapie() and its helper functions."""
 
     def __init__(self):
-        """Initializes a seapie instance. seapie objects should not be saved"""
-        """this class is singleton so the instance is actually stored 'as' the class information. dont make more instances. its gonna blow up"""
-        # if Seapie.__instance is not None:
+        """Initializes a seapie instance. seapie objects should not be initialized as the class is only a logical collection of functons"""
+        # this behaviour is chosen so that code stepping can be implemented easier
         raise SingletonException("The Seapie class is a logical and instanceless singleton! Access the prompt with Seapie.repl() or convenient seapie() that points to Seapie.repl()")
-        # else:
-        #     Seapie.__instance = self
 
     @classmethod
-    def repl(cls):
+    def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
-        # if cls.executable is None:
-        #     print("=======[  SEAPIE v1.2 type !help for SEAPIE help  ]=======")
         while True:
-            # parent = sys._getframe(cls.scope)  # frame enclosing seapie() call
-            # parent_globals = parent.f_globals
-            # parent_locals = parent.f_locals
-            # if cls.executable:                 # if executable block is given
-            #     codeblock = cls.executable     # only the executable is ran
-            #     cls.prompt_open = False        # and prompt closes after it
-            # else:
-            #     codeblock = cls.single_prompt()
             codeblock = cls.single_prompt()
-            
             if isinstance(codeblock, str):  # got magic string
                 try:
                     cls.magic_handler(codeblock)
                     continue # magic is handled. get new command
                 except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
-                    return
+                    return cls._repl_and_tracelines
             else:
                 try:
-                    cls.arbitary_executor(codeblock, cls.scope)
+                    cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
                 except Exception:  # catch arbitary exceptions from exec
                     traceback.print_exc()
-        # if cls.executable is None:
-        #     print("=======[  Closing SEAPIE v1.1 prompt. Continuing  ]=======")
-
     @staticmethod
-    def arbitary_executor(codeblock, scope=0):
+    def arbitary_scope_exec(codeblock, scope=0):
         parent = sys._getframe(scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
+        # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
         parent_globals = parent.f_globals
         parent_locals = parent.f_locals
         exec(codeblock, parent_globals, parent_locals)
         # the following call forces update to locals()
         # adding new variables is allowed but calling them requires
         # some indirection like using exec() or a placeholder
-        # otherwise you will get nameerror
+        # otherwise you will get nameError when calling the variable
         # the magic value 1 stands for ability to introduce new variables. 0 for update-only
         ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent),
                                                       ctypes.c_int(1))
 
 
-    @classmethod
-    def magic_handler(cls, magicstring):
+    @staticmethod
+    def magic_handler(magicstring):
         """Any magic strings starting with ! are handled here"""
-        if magicstring == "!exit":
+        if magicstring == "!step":
+            #print("Executing line", frame.f_lineno)
+            print("Executed line", sys._getframe(2).f_lineno)
             raise SeapieReplExitException
-        elif magicstring == "!scope":
-            print(sys._getframe(cls.scope+1).f_code.co_name)
         elif magicstring == "!help":
             print("SEAPIE v1.1 type !help for SEAPIE help\n")
-            print("!help   : this message")
-            print("!exit   : exit seapie and continue exection")
-            print("!scope  : view currently used namespace from callstack")
-            print("!tree   : view current call stack")
-            print("!scope+ : increase scope, move towards global namespace")
-            print("!scope- : decrease scope, move towards local namespace")
-        elif magicstring == "!scope-":
-            if cls.scope >= 3:  # avoid going into seapie module itself
-                cls.scope -= 1
-            else:
-                print("cant go higher than current call")
-        elif magicstring == "!scope+":
-            try:
-                sys._getframe(cls.scope+2)  # avoid calling nonexisting frame
-            except ValueError:
-                print("call stack is not deep enough")
-            else:
-                cls.scope += 1
+            print("!help    : this message")
+            print("!step    : step")
+            print("!tree    : view current call stack")
+            print("!locals  : prettyprint locals")
+            print("!globals : prettyprint globals")
+            print("!scope   : display the name of the current scope")
         elif magicstring == "!tree":
             print()
             for call in traceback.format_stack()[:-2]:
                 print(call)
+        elif magicstring == "!locals":
+            # normal locals() cant be used here. it displays wrong scope.
+            frame = sys._getframe(2)
+            print("Locals of", frame.f_code.co_name)
+            for local in frame.f_locals:
+                print(local)
+        elif magicstring == "!globals":
+            # normal globals() cant be used here. it displays wrong scope.
+            frame = sys._getframe(2)
+            print("Globals of", frame.f_code.co_name)
+            for local in frame.f_globals:
+                print(local)
+        elif magicstring == "!scope":
+            print(sys._getframe(2).f_code.co_name)
         else:
             print("Unknown magic command!")
 
@@ -141,9 +112,9 @@ class Seapie:
         while True:
             try:
                 if not accumulator:  # if on first line of incoming block
-                    raw_text = input(str("<S> " + sys.ps1))
+                    raw_text = input(str("(S) " + sys.ps1))
                 else:  # if on continuing line
-                    raw_text = input(str("<S> " + sys.ps2))
+                    raw_text = input(str("(S) " + sys.ps2))
             except KeyboardInterrupt:  # emulate behaviour of ctrl+c
                 print("\nKeyboardInterrupt")
                 accumulator = ""
@@ -186,6 +157,15 @@ try:  # enables support for sys.ps2
 except AttributeError:
     sys.ps2 = "... "
 
-seapie = Seapie.repl
-true_exec = Seapie.arbitary_executor
 
+def trace_calls(frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
+    print("ollaan tracecallssissa!", frame.f_code)
+    return Seapie._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
+
+
+# seapie = Seapie.repl
+arbitary_scope_exec = Seapie.arbitary_scope_exec
+
+def seapie():
+    sys.settrace(trace_calls)
+    sys._getframe(1).f_trace = Seapie._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
