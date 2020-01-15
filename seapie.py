@@ -48,17 +48,22 @@ class Seapie:
                 except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
                     return cls._repl_and_tracelines
             else:
-                try:
+                #try:
                     cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
-                except Exception:  # catch arbitary exceptions from exec
-                    traceback.print_exc()
+                #except Exception:  # catch arbitary exceptions from exec
+                #    traceback.print_exc()
     @staticmethod
     def arbitary_scope_exec(codeblock, scope=0):
         parent = sys._getframe(scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
         # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
         parent_globals = parent.f_globals
         parent_locals = parent.f_locals
-        exec(codeblock, parent_globals, parent_locals)
+        try:
+            exec(codeblock, parent_globals, parent_locals)
+        except KeyboardInterrupt:  # emulate behaviour of ctrl+c
+            print("\nKeyboardInterrupt")
+        except Exception:  # catch arbitary exceptions from exec
+            traceback.print_exc()
         # the following call forces update to locals()
         # adding new variables is allowed but calling them requires
         # some indirection like using exec() or a placeholder
