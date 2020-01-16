@@ -43,6 +43,7 @@ class Seapie:
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
         while True:
+            # this block autosets condition to step as long as stepstill is valid
             if cls.steptill_condition is None:
                 codeblock = cls.single_prompt()
             else:
@@ -105,7 +106,15 @@ class Seapie:
             if cls.scope != 0:
                 print("Stepping is not recommended in scopes that are not currently executing! You can modify seapie to remove this limit in magic_handler")
             else:
-                cls.steptill_condition = magicstring[10:]
+                condition = magicstring[10:]
+                try:
+                    eval(condition)
+                except SyntaxError:
+                    print("'", condition, "'", "is not proper condition")
+                except NameError:
+                    cls.steptill_condition = condition # nameError might happen in this namespace but it might be valid condition somewhere else
+                else:
+                    cls.steptill_condition = condition
         elif magicstring == "!exit":
             #print("Executing line", frame.f_lineno)
             print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
@@ -159,17 +168,17 @@ class Seapie:
             print("   ", "This prompt works like you would expect for python")
             print("   ", "prompt to work if it was opened on the line seapie() was called")
             print()
-            print("   ", "!help         : this message")
-            print("   ", "!peek         : show what line will be executed on next tep")
-            print("   ", "!step         : execute the next line of source code")
-            print("   ", "!steptill x==y: same as above until any given condition is true")
-            print("   ", "!exit         : closes seapie prompt and stops tracing")
-            print("   ", "!tree         : views current call stack excluding seapie")
-            print("   ", "!locals       : prettyprint locals()")
-            print("   ", "!globals      : prettyprint globals()")
-            print("   ", "!scope        : display the name of the current scope")
-            print("   ", "!scope+       : increase scope, move towards global namespace")
-            print("   ", "!scope-       : decrease scope, move towards local namespace")
+            print("   ", "!help       : this message")
+            print("   ", "!peek       : show what line will be executed on next tep")
+            print("   ", "!step       : execute the next line of source code")
+            print("   ", "!steptill X : same as above until any given condition for bool(eval(X)) is True. eval is executed in any current namespace per step")
+            print("   ", "!exit       : closes seapie prompt and stops tracing")
+            print("   ", "!tree       : views current call stack excluding seapie")
+            print("   ", "!locals     : prettyprint locals()")
+            print("   ", "!globals    : prettyprint globals()")
+            print("   ", "!scope      : display the name of the current scope")
+            print("   ", "!scope+     : increase scope, move towards global namespace")
+            print("   ", "!scope-     : decrease scope, move towards local namespace")
             print()
         else:
             print("Unknown magic command!")
@@ -243,3 +252,5 @@ def seapie():
     sys.settrace(trace_calls)
     sys._getframe(1).f_trace = Seapie._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
 
+
+BREAKPOINT = True
