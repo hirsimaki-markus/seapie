@@ -32,6 +32,7 @@ class Seapie:
     """Container class for seapie() and its helper functions."""
 
     steptill_condition = None
+    scope = 0
 
     def __init__(self):
         """Initializes a seapie instance. seapie objects should not be initialized as the class is only a logical collection of functons"""
@@ -67,9 +68,9 @@ class Seapie:
                     cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
                 #except Exception:  # catch arbitary exceptions from exec
                 #    traceback.print_exc()
-    @staticmethod
-    def arbitary_scope_exec(codeblock, scope=0):
-        parent = sys._getframe(scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
+    @classmethod
+    def arbitary_scope_exec(cls, codeblock, scope=0):
+        parent = sys._getframe(cls.scope+scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
         # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
         parent_globals = parent.f_globals
         parent_locals = parent.f_locals
@@ -92,18 +93,24 @@ class Seapie:
     def magic_handler(cls, magicstring):
         """Any magic strings starting with ! are handled here"""
         if magicstring == "!peek":
-           print("Next line to be executed is", sys._getframe(2).f_lineno)
+           print("Next line to be executed is", sys._getframe(cls.scope+2).f_lineno)
         elif magicstring == "!step":
             #print("Executing line", frame.f_lineno)
-            print("Executed line", sys._getframe(2).f_lineno)
-            raise SeapieReplExitException
+            if cls.scope != 0:
+                print("Stepping is not recommended in scopes that are not currently executing! You can modify seapie to remove this limit in magic_handler")
+            else:
+                print("Executed line", sys._getframe(cls.scope+2).f_lineno)
+                raise SeapieReplExitException
         elif magicstring[:9] == "!steptill":
-            cls.steptill_condition = magicstring[10:]
+            if cls.scope != 0:
+                print("Stepping is not recommended in scopes that are not currently executing! You can modify seapie to remove this limit in magic_handler")
+            else:
+                cls.steptill_condition = magicstring[10:]
         elif magicstring == "!exit":
             #print("Executing line", frame.f_lineno)
-            print("Continuing from line", sys._getframe(2).f_lineno)
+            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
             sys.settrace(None)
-            sys._getframe(2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
             raise SeapieReplExitException
         elif magicstring == "!tree":
             print()
@@ -111,7 +118,7 @@ class Seapie:
                 print(call)
         elif magicstring == "!locals":
             # normal locals() cant be used here. it displays wrong scope.
-            frame = sys._getframe(2)
+            frame = sys._getframe(cls.scope+2)
             print()
             try:
                 max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
@@ -123,7 +130,7 @@ class Seapie:
             print()
         elif magicstring == "!globals":
             # normal globals() cant be used here. it displays wrong scope.
-            frame = sys._getframe(2)
+            frame = sys._getframe(cls.scope+2)
             print()
             try:
                 max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
@@ -134,7 +141,19 @@ class Seapie:
                 print("   ", name + pad, "=", value)
             print()
         elif magicstring == "!scope":
-            print(sys._getframe(2).f_code.co_name)
+            print(sys._getframe(cls.scope+2).f_code.co_name)
+        elif magicstring == "!scope-":
+            if cls.scope == 0:
+                print("You are at the top of stack (seapie is excluded)")
+            else:
+                cls.scope -= 1
+        elif magicstring == "!scope+":
+            try:
+                sys._getframe(cls.scope+3)  # +2 like elsewhere to escape seapie itself and +1 for lookahead
+            except ValueError:
+                print("Call stack is not deep enough")
+            else:
+                cls.scope += 1
         elif magicstring == "!help":
             print()
             print("   ", "This prompt works like you would expect for python")
@@ -149,6 +168,8 @@ class Seapie:
             print("   ", "!locals       : prettyprint locals()")
             print("   ", "!globals      : prettyprint globals()")
             print("   ", "!scope        : display the name of the current scope")
+            print("   ", "!scope+       : increase scope, move towards global namespace")
+            print("   ", "!scope-       : decrease scope, move towards local namespace")
             print()
         else:
             print("Unknown magic command!")
