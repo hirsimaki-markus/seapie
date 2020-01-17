@@ -31,7 +31,8 @@ class SeapieReplExitException(Exception):
 class Seapie:
     """Container class for seapie() and its helper functions."""
 
-    steptill_condition = None
+    until_expr = None
+    until_line = None
     scope = 0
 
     def __init__(self):
@@ -43,18 +44,37 @@ class Seapie:
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
         while True:
+
+            #source, start = inspect.getsourcelines(frame)
+            #for idx, line in enumerate(source):
+            #    print(idx+start, line.rstrip())
+            
             # this block autosets condition to step as long as stepstill is valid
             if cls.steptill_condition is None:
                 codeblock = cls.single_prompt()
             else:
-                try:
-                    if eval(cls.steptill_condition, frame.f_globals, frame.f_locals):
+                #input("tultiin elseen")
+                source, start = inspect.getsourcelines(frame)
+                #print("source on", source)
+                #print("start on", start)
+                for idx, line in enumerate(source):
+                    #print("looppi")
+                    #print(idx+start)
+                    if idx+start == 32:
                         cls.steptill_condition = None
                         codeblock = cls.single_prompt()
+                        break
                     else:
                         codeblock = "!step"
-                except NameError: # could not find variable to even try to satisfy condition. skipping.
-                    codeblock = "!step"
+
+                # try:
+                    # if eval(cls.steptill_condition, frame.f_globals, frame.f_locals):
+                        # cls.steptill_condition = None
+                        # codeblock = cls.single_prompt()
+                    # else:
+                        # codeblock = "!step"
+                # except NameError: # could not find variable to even try to satisfy condition. skipping.
+                    # codeblock = "!step"
                 
             # codeblock = cls.single_prompt()
             if isinstance(codeblock, str):  # got magic string
@@ -95,32 +115,6 @@ class Seapie:
         """Any magic strings starting with ! are handled here"""
         if magicstring == "!peek":
            print("Next line to be executed is", sys._getframe(cls.scope+2).f_lineno)
-        elif magicstring == "!step":
-            #print("Executing line", frame.f_lineno)
-            if cls.scope != 0:
-                print("Stepping is not recommended in scopes that are not currently executing! You can modify seapie to remove this limit in magic_handler")
-            else:
-                print("Executed line", sys._getframe(cls.scope+2).f_lineno)
-                raise SeapieReplExitException
-        elif magicstring[:9] == "!steptill":
-            if cls.scope != 0:
-                print("Stepping is not recommended in scopes that are not currently executing! You can modify seapie to remove this limit in magic_handler")
-            else:
-                condition = magicstring[10:]
-                try:
-                    eval(condition)
-                except SyntaxError:
-                    print("'", condition, "'", "is not proper condition")
-                except NameError:
-                    cls.steptill_condition = condition # nameError might happen in this namespace but it might be valid condition somewhere else
-                else:
-                    cls.steptill_condition = condition
-        elif magicstring == "!exit":
-            #print("Executing line", frame.f_lineno)
-            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
-            sys.settrace(None)
-            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
-            raise SeapieReplExitException
         elif magicstring == "!tree":
             print()
             for call in traceback.format_stack()[:-2]:
@@ -151,35 +145,92 @@ class Seapie:
             print()
         elif magicstring == "!scope":
             print(sys._getframe(cls.scope+2).f_code.co_name)
-        elif magicstring == "!scope-":
+        elif magicstring == "!-scope":
             if cls.scope == 0:
                 print("You are at the top of stack (seapie is excluded)")
             else:
                 cls.scope -= 1
-        elif magicstring == "!scope+":
+        elif magicstring == "!+scope":
             try:
                 sys._getframe(cls.scope+3)  # +2 like elsewhere to escape seapie itself and +1 for lookahead
             except ValueError:
                 print("Call stack is not deep enough")
             else:
                 cls.scope += 1
-        elif magicstring == "!help":
-            print()
-            print("   ", "This prompt works like you would expect for python")
-            print("   ", "prompt to work if it was opened on the line seapie() was called")
-            print()
-            print("   ", "!help       : this message")
-            print("   ", "!peek       : show what line will be executed on next tep")
-            print("   ", "!step       : execute the next line of source code")
-            print("   ", "!steptill X : same as above until any given condition for bool(eval(X)) is True. eval is executed in any current namespace per step")
-            print("   ", "!exit       : closes seapie prompt and stops tracing")
-            print("   ", "!tree       : views current call stack excluding seapie")
-            print("   ", "!locals     : prettyprint locals()")
-            print("   ", "!globals    : prettyprint globals()")
-            print("   ", "!scope      : display the name of the current scope")
-            print("   ", "!scope+     : increase scope, move towards global namespace")
-            print("   ", "!scope-     : decrease scope, move towards local namespace")
-            print()
+        elif magicstring in ("!help", "!h"):
+            help = ["",
+            "(!h)elp       : Show this info block",
+            "(!e)xit       : Close seapie, end tracing and resume main",
+            "",
+            "(!s)tep       : Execute the next line of source code",
+            "(!u)ntil 1234 : Step until line source code line 123",
+            "(!u)ntil expr : Step until eval('expr') equals to True",
+            "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
+            "                └─> note: eval is done in executing scope"
+            "",
+            "(!t)raceback  : Show traceback excluding seapie",
+            "(!p)eek       : Show next source lines in current scope",
+            "(!l)ocals     : locals() in prettyprinted from",
+            "(!g)lobals    : globals() in prettyprinted from",
+            "",
+            "(!n)amespace  : Show current scope/namespace name",
+            "(!+)namespace : Go down in callstack towards global scope",
+            "(!-)namespace : Go up in callstack towards local scope",
+            "(!0)namespace : Go back to currently executing scope",
+            ""]
+            for line in help: print("    " + line)
+        elif magicstring in ("!exit", "!e"):
+            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
+            sys.settrace(None)
+            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            # stepping is caused by re-entering seapie
+            # SeapieReplExitException is used to exit seapie
+            # and re-entering wont happen because tracing was unset
+            raise SeapieReplExitException
+        elif magicstring in ("!step", "!s"):
+            if cls.scope != 0:
+                print("Stepping is only available in current namespace")
+                print("Use '!step force' to bypass this warning")
+            else:
+                print("Executed line", sys._getframe(cls.scope+2).f_lineno)
+                # stepping is caused by re-entering seapie
+                # SeapieReplExitException is used to exit seapie
+                # and it is re-entering because of tracing
+                raise SeapieReplExitException
+        elif magicstring in ("!step force"):
+            print("Executed line", sys._getframe(cls.scope+2).f_lineno)
+            # stepping is caused by re-entering seapie
+            # SeapieReplExitException is used to exit seapie
+            # and it is re-entering because of tracing
+            raise SeapieReplExitException
+        elif magicstring[:7] == "!until " or magicstring[:3] == "!u "
+            if cls.scope != 0 and magicstring[-6:] != " force":
+                print("Stepping is only available in current namespace")
+                print("Use '!until expr force' to bypass this warning")
+                print("Use '!until 1234 force ' to bypass this warning")
+                return
+            if magicstring[:7] == "!until "
+                command = magicstring[7:]
+            if magicstring[:3] == "!u "
+                command = magicstring[3:]
+            # this try block sets stepping to line
+            try:
+                cls.until_line = int(command)
+            except ValueError: # the command was not intended to be linenumber
+                pass
+            else:
+                return
+            # this block sets stepping to expressions
+            try
+                eval(condition) # check that the condition is valid
+            except SyntaxError:
+                print("'", condition, "'", "is not expression or lines")
+            except NameError:
+                cls.until_expr = condition # nameError might happen in this namespace but it might be valid condition somewhere else
+            else:
+                cls.until_expr = condition
+        elif magicstring[:13] == "!until force ":
+            pass
         else:
             print("Unknown magic command!")
 
