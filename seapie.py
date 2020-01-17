@@ -45,36 +45,35 @@ class Seapie:
         """Main code injector loop"""
         while True:
 
-            #source, start = inspect.getsourcelines(frame)
-            #for idx, line in enumerate(source):
-            #    print(idx+start, line.rstrip())
-            
             # this block autosets condition to step as long as stepstill is valid
-            if cls.steptill_condition is None:
+            if cls.until_line is None and cls.until_expr is None:
                 codeblock = cls.single_prompt()
-            else:
-                #input("tultiin elseen")
-                source, start = inspect.getsourcelines(frame)
-                #print("source on", source)
-                #print("start on", start)
-                for idx, line in enumerate(source):
-                    #print("looppi")
-                    #print(idx+start)
-                    if idx+start == 32:
-                        cls.steptill_condition = None
+            elif cls.until_line is not None:
+                if cls.until_line != frame.f_lineno:
+                    codeblock = "!step"
+                else:
+                    cls.until_line = None
+                    codeblock = cls.single_prompt()
+                #important example below!! about getting sauce in current func
+                #source, start = inspect.getsourcelines(frame)
+                #for idx, line in enumerate(source):
+                #    #print("looppi")
+                #    #print(idx+start)
+                #    if idx+start == cls.until_line:
+                #        cls.until_line = None
+                #        codeblock = cls.single_prompt()
+                #        break
+                #    else:
+                #        codeblock = "!step"
+            elif cls.until_expr is not None:
+                try:
+                    if eval(cls.until_expr, frame.f_globals, frame.f_locals):
+                        cls.until_expr = None
                         codeblock = cls.single_prompt()
-                        break
                     else:
                         codeblock = "!step"
-
-                # try:
-                    # if eval(cls.steptill_condition, frame.f_globals, frame.f_locals):
-                        # cls.steptill_condition = None
-                        # codeblock = cls.single_prompt()
-                    # else:
-                        # codeblock = "!step"
-                # except NameError: # could not find variable to even try to satisfy condition. skipping.
-                    # codeblock = "!step"
+                except NameError: # could not find variable to even try to satisfy condition. skipping.
+                    codeblock = "!step"
                 
             # codeblock = cls.single_prompt()
             if isinstance(codeblock, str):  # got magic string
@@ -113,70 +112,28 @@ class Seapie:
     @classmethod
     def magic_handler(cls, magicstring):
         """Any magic strings starting with ! are handled here"""
-        if magicstring == "!peek":
-           print("Next line to be executed is", sys._getframe(cls.scope+2).f_lineno)
-        elif magicstring == "!tree":
-            print()
-            for call in traceback.format_stack()[:-2]:
-                print(call)
-        elif magicstring == "!locals":
-            # normal locals() cant be used here. it displays wrong scope.
-            frame = sys._getframe(cls.scope+2)
-            print()
-            try:
-                max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
-            except ValueError: # there are no keys
-                return
-            for name, value in frame.f_locals.items():
-                pad = (max_pad-len(name))*" "
-                print("   ", name + pad, "=", value)
-            print()
-        elif magicstring == "!globals":
-            # normal globals() cant be used here. it displays wrong scope.
-            frame = sys._getframe(cls.scope+2)
-            print()
-            try:
-                max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
-            except ValueError: # there are no keys
-                return
-            for name, value in frame.f_globals.items():
-                pad = (max_pad-len(name))*" "
-                print("   ", name + pad, "=", value)
-            print()
-        elif magicstring == "!scope":
-            print(sys._getframe(cls.scope+2).f_code.co_name)
-        elif magicstring == "!-scope":
-            if cls.scope == 0:
-                print("You are at the top of stack (seapie is excluded)")
-            else:
-                cls.scope -= 1
-        elif magicstring == "!+scope":
-            try:
-                sys._getframe(cls.scope+3)  # +2 like elsewhere to escape seapie itself and +1 for lookahead
-            except ValueError:
-                print("Call stack is not deep enough")
-            else:
-                cls.scope += 1
-        elif magicstring in ("!help", "!h"):
-            help = ["",
+        if magicstring in ("!help", "!h"):
+            help = [" ",
             "(!h)elp       : Show this info block",
             "(!e)xit       : Close seapie, end tracing and resume main",
             "",
-            "(!s)tep       : Execute the next line of source code",
-            "(!u)ntil 1234 : Step until line source code line 123",
-            "(!u)ntil expr : Step until eval('expr') equals to True",
-            "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
-            "                └─> note: eval is done in executing scope"
-            "",
             "(!t)raceback  : Show traceback excluding seapie",
-            "(!p)eek       : Show next source lines in current scope",
             "(!l)ocals     : locals() in prettyprinted from",
             "(!g)lobals    : globals() in prettyprinted from",
+            "(!w)here      : Show executing line and it's surroundings",
             "",
             "(!n)amespace  : Show current scope/namespace name",
             "(!+)namespace : Go down in callstack towards global scope",
             "(!-)namespace : Go up in callstack towards local scope",
             "(!0)namespace : Go back to currently executing scope",
+            "",
+            "(!c)ode obj   : Show source code of object",
+            "",
+            "(!s)tep       : Execute the next line of source code",
+            "(!u)ntil 1234 : Step until line source code line 1234",
+            "(!u)ntil expr : Step until eval('my_expression') == True",
+            "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
+            "                └─> note: eval is done in executing scope",
             ""]
             for line in help: print("    " + line)
         elif magicstring in ("!exit", "!e"):
@@ -197,21 +154,21 @@ class Seapie:
                 # SeapieReplExitException is used to exit seapie
                 # and it is re-entering because of tracing
                 raise SeapieReplExitException
-        elif magicstring in ("!step force"):
+        elif magicstring == "!step force":
             print("Executed line", sys._getframe(cls.scope+2).f_lineno)
             # stepping is caused by re-entering seapie
             # SeapieReplExitException is used to exit seapie
             # and it is re-entering because of tracing
             raise SeapieReplExitException
-        elif magicstring[:7] == "!until " or magicstring[:3] == "!u "
-            if cls.scope != 0 and magicstring[-6:] != " force":
+        elif magicstring[:7] == "!until " or magicstring[:3] == "!u ":
+            if cls.scope != 0:
                 print("Stepping is only available in current namespace")
-                print("Use '!until expr force' to bypass this warning")
-                print("Use '!until 1234 force ' to bypass this warning")
+                #print("Use '!until expr force' to bypass this warning")
+                #print("Use '!until 1234 force ' to bypass this warning")
                 return
-            if magicstring[:7] == "!until "
+            if magicstring[:7] == "!until ":
                 command = magicstring[7:]
-            if magicstring[:3] == "!u "
+            elif magicstring[:3] == "!u ":
                 command = magicstring[3:]
             # this try block sets stepping to line
             try:
@@ -221,16 +178,72 @@ class Seapie:
             else:
                 return
             # this block sets stepping to expressions
-            try
-                eval(condition) # check that the condition is valid
+            try:
+                eval(command) # check that the condition is valid
             except SyntaxError:
-                print("'", condition, "'", "is not expression or lines")
+                print("'", command, "'", "is not expression or line")
             except NameError:
-                cls.until_expr = condition # nameError might happen in this namespace but it might be valid condition somewhere else
+                cls.until_expr = command # nameError might happen in this namespace but it might be valid condition somewhere else
             else:
-                cls.until_expr = condition
-        elif magicstring[:13] == "!until force ":
-            pass
+                cls.until_expr = command
+        elif magicstring in ("!traceback", "!t"):
+            print()
+            for call in traceback.format_stack()[:-2]:
+                print(call)
+        elif magicstring in ("!where", "!w"):
+            # getsourcefile
+            # getsourcelines
+            current_line = sys._getframe(cls.scope+2).f_lineno
+            path = inspect.getsourcefile(sys._getframe(cls.scope+2))
+            with open(path, "r") as file:
+                source = file.read().splitlines()
+            print()
+            for line_no, line in enumerate(source):
+                if current_line == line_no:
+                    print("--->")
+                if abs(line_no+0.6 - current_line) <= 5: # +0.6 rounds so that even amount of lines is shown instead of odd
+                    print("   ", line_no, line)
+            print()
+        elif magicstring in ("!locals", "!l"):
+            # normal locals() cant be used here. it displays wrong scope.
+            frame = sys._getframe(cls.scope+2)
+            print()
+            try:
+                max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
+            except ValueError: # there are no keys
+                return
+            for name, value in frame.f_locals.items():
+                pad = (max_pad-len(name))*" "
+                print("   ", name + pad, "=", value)
+            print()
+        elif magicstring in ("!globals", "!g"):
+            # normal globals() cant be used here. it displays wrong scope.
+            frame = sys._getframe(cls.scope+2)
+            print()
+            try:
+                max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
+            except ValueError: # there are no keys
+                return
+            for name, value in frame.f_globals.items():
+                pad = (max_pad-len(name))*" "
+                print("   ", name + pad, "=", value)
+            print()
+        elif magicstring in ("!namespace", "!n"):
+            print(sys._getframe(cls.scope+2).f_code.co_name)
+        elif magicstring in ("!+namespace", "!+"):
+            try:
+                sys._getframe(cls.scope+3)  # +2 like elsewhere to escape seapie itself and +1 for lookahead
+            except ValueError:
+                print("Call stack is not deep enough")
+            else:
+                cls.scope += 1
+        elif magicstring in ("!-namespace", "!-"):
+            if cls.scope == 0:
+                print("You are at the top of stack (seapie is excluded)")
+            else:
+                cls.scope -= 1
+        elif magicstring in ("!0namespace", "!0"):
+            cls.scope = 0
         else:
             print("Unknown magic command!")
 
