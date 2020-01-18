@@ -24,9 +24,12 @@ class SingletonException(Exception):
     """helper exception used in case someone tries to initialize seapie instance instead of using the class without instance"""
     pass
 
+
 class SeapieReplExitException(Exception):
     """raised to close seapie repl"""
     pass
+
+
 
 class Seapie:
     """Container class for seapie() and its helper functions."""
@@ -43,24 +46,22 @@ class Seapie:
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
-        #print("123"*10)
-        #while True:
-
-            
-        codeblock = cls._step_until_handler(frame)
         
-        if isinstance(codeblock, str):  # got magic string
-            try:
-                cls.magic_handler(codeblock)
-                return # magic is handled. get new command
-            except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
-                return
-                #return cls._repl_and_tracelines # this might be needed but not really??
-        else:
-            #try:
-            cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
-            #except Exception:  # catch arbitary exceptions from exec
-            #    traceback.print_exc()
+        while True:
+            codeblock = cls._step_until_handler(frame)
+            
+            if isinstance(codeblock, str):  # got magic string
+                try:
+                    cls.magic_handler(codeblock)
+                    continue # magic is handled. get new command
+                except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
+                    return
+                    #return cls._repl_and_tracelines # this might be needed but not really??
+            else:
+                #try:
+                cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
+                #except Exception:  # catch arbitary exceptions from exec
+                #    traceback.print_exc()
             
     @classmethod
     def _step_until_handler(cls, frame):
@@ -126,15 +127,17 @@ class Seapie:
             "(!-)namespace : Go up in callstack towards local scope",
             "(!0)namespace : Go back to currently executing scope",
             "",
-            "(!c)ode obj   : Show source code of object",
-            "                └─> e.g.: code my_function_name",
             "(!s)tep       : Execute the next line of source code",
+            "(!r)un        : Execute until hitting seapiebreakpoint()",
             "(!u)ntil 1234 : Step until line source code line 1234",
             "                └─> note: line must be executable code;",
             "                          not comment, def or class etc.",
             "(!u)ntil expr : Step until eval('my_expression') == True",
             "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
             "                └─> note: eval is done in executing scope",
+            "                          be aware of side effects",
+            "(!c)ode obj   : Show source code of object",
+            "                └─> e.g.: code my_function_name",
             ""]
             for line in help: print("    " + line)
         elif magicstring in ("!exit", "!e"):
@@ -148,19 +151,16 @@ class Seapie:
         elif magicstring in ("!step", "!s"):
             if cls.scope != 0:
                 print("Stepping is only available in current namespace")
-                print("Use '!step force' to bypass this warning")
+                # print("Use '!step force' to bypass this warning")
             else:
                 print("Executed line", sys._getframe(cls.scope+2).f_lineno)
                 # stepping is caused by re-entering seapie
                 # SeapieReplExitException is used to exit seapie
                 # and it is re-entering because of tracing
                 raise SeapieReplExitException
-        elif magicstring == "!step force":
-            print("Executed line", sys._getframe(cls.scope+2).f_lineno)
-            # stepping is caused by re-entering seapie
-            # SeapieReplExitException is used to exit seapie
-            # and it is re-entering because of tracing
-            raise SeapieReplExitException
+        elif magicstring in ("!run", "!r"):
+            cls.scope = 0
+            cls.until_expr = "False" # this will run until hitting breakpoint as this will always evaluate to False
         elif magicstring[:7] in ("!until ", "!until") or magicstring[:3] in ("!u ", "!u"):
             if cls.scope != 0:
                 print("Stepping is only available in current namespace")
@@ -196,10 +196,11 @@ class Seapie:
             # getsourcelines
             current_line = sys._getframe(cls.scope+2).f_lineno
             path = inspect.getsourcefile(sys._getframe(cls.scope+2))
-            with open(path, "r") as file:
+            with open(path, "r", encoding="utf-8") as file:
                 source = file.read().splitlines()
             print()
             for line_no, line in enumerate(source):
+                line_no +=1 # fix off by one. enumerate starts at 0
                 if current_line == line_no:
                     print("--->")
                 if abs(line_no+0.6 - current_line) <= 5: # +0.6 rounds so that even amount of lines is shown instead of odd
@@ -321,16 +322,21 @@ except AttributeError:
 
 
 def trace_calls(frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
+    if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
+        return
     print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name) # make this conditinal?
     return Seapie._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
 
-# seapie = Seapie.repl
-arbitary_scope_exec = Seapie.arbitary_scope_exec
-
 def seapie():
-    sys.settrace(trace_calls)
-    sys._getframe(1).f_trace = Seapie._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+    if sys._getframe(1).f_trace is not None: # tracking is not already active
+        print("Stopping on breakpoint")
+        Seapie.until_expr = None
+        Seapie.until_line = None
+    else:
+        print("=" * 27, "[ Starting seapie v2.0 ]", "=" * 27)
+        sys.settrace(trace_calls)
+        sys._getframe(1).f_trace = Seapie._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
 
 
-BREAKPOINT = True
+
