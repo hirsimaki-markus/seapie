@@ -43,51 +43,50 @@ class Seapie:
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
-        while True:
+        #print("123"*10)
+        #while True:
 
-            # this block autosets condition to step as long as stepstill is valid
-            if cls.until_line is None and cls.until_expr is None:
-                codeblock = cls.single_prompt()
-            elif cls.until_line is not None:
-                if cls.until_line != frame.f_lineno:
-                    codeblock = "!step"
-                else:
-                    cls.until_line = None
-                    codeblock = cls.single_prompt()
-                #important example below!! about getting sauce in current func
-                #source, start = inspect.getsourcelines(frame)
-                #for idx, line in enumerate(source):
-                #    #print("looppi")
-                #    #print(idx+start)
-                #    if idx+start == cls.until_line:
-                #        cls.until_line = None
-                #        codeblock = cls.single_prompt()
-                #        break
-                #    else:
-                #        codeblock = "!step"
-            elif cls.until_expr is not None:
-                try:
-                    if eval(cls.until_expr, frame.f_globals, frame.f_locals):
-                        cls.until_expr = None
-                        codeblock = cls.single_prompt()
-                    else:
-                        codeblock = "!step"
-                except NameError: # could not find variable to even try to satisfy condition. skipping.
-                    codeblock = "!step"
-                
-            # codeblock = cls.single_prompt()
-            if isinstance(codeblock, str):  # got magic string
-                try:
-                    cls.magic_handler(codeblock)
-                    continue # magic is handled. get new command
-                except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
-                    return
-                    #return cls._repl_and_tracelines # this might be needed but not really??
+            
+        codeblock = cls._step_until_handler(frame)
+        
+        if isinstance(codeblock, str):  # got magic string
+            try:
+                cls.magic_handler(codeblock)
+                return # magic is handled. get new command
+            except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
+                return
+                #return cls._repl_and_tracelines # this might be needed but not really??
+        else:
+            #try:
+            cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
+            #except Exception:  # catch arbitary exceptions from exec
+            #    traceback.print_exc()
+            
+    @classmethod
+    def _step_until_handler(cls, frame):
+        """returns executable block of code or !step magic string if required by !until condition"""
+        # no special until conditions
+        if cls.until_line is None and cls.until_expr is None:
+            return cls.single_prompt()
+        # walk to line condition
+        elif cls.until_line is not None:
+            if cls.until_line != frame.f_lineno:
+                return "!step"
             else:
-                #try:
-                    cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
-                #except Exception:  # catch arbitary exceptions from exec
-                #    traceback.print_exc()
+                cls.until_line = None
+                return cls.single_prompt()
+        # walk until expression
+        elif cls.until_expr is not None:
+            try:
+                if eval(cls.until_expr, frame.f_globals, frame.f_locals):
+                    cls.until_expr = None
+                    return cls.single_prompt()
+                else:
+                    return "!step"
+            except NameError: # could not find variable to even try to satisfy condition. skipping.
+                return "!step"
+
+                
     @classmethod
     def arbitary_scope_exec(cls, codeblock, scope=0):
         parent = sys._getframe(cls.scope+scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
@@ -128,10 +127,11 @@ class Seapie:
             "(!0)namespace : Go back to currently executing scope",
             "",
             "(!c)ode obj   : Show source code of object",
-            "                └─> e.g.: code my_function_name"
-            "",
+            "                └─> e.g.: code my_function_name",
             "(!s)tep       : Execute the next line of source code",
             "(!u)ntil 1234 : Step until line source code line 1234",
+            "                └─> note: line must be executable code;",
+            "                          not comment, def or class etc.",
             "(!u)ntil expr : Step until eval('my_expression') == True",
             "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
             "                └─> note: eval is done in executing scope",
@@ -161,15 +161,15 @@ class Seapie:
             # SeapieReplExitException is used to exit seapie
             # and it is re-entering because of tracing
             raise SeapieReplExitException
-        elif magicstring[:7] == "!until " or magicstring[:3] == "!u ":
+        elif magicstring[:7] in ("!until ", "!until") or magicstring[:3] in ("!u ", "!u"):
             if cls.scope != 0:
                 print("Stepping is only available in current namespace")
                 #print("Use '!until expr force' to bypass this warning")
                 #print("Use '!until 1234 force ' to bypass this warning")
                 return
-            if magicstring[:7] == "!until ":
+            if magicstring[:6] == "!until":
                 command = magicstring[7:]
-            elif magicstring[:3] == "!u ":
+            elif magicstring[:2] == "!u":
                 command = magicstring[3:]
             # this try block sets stepping to line
             try:
@@ -182,7 +182,7 @@ class Seapie:
             try:
                 eval(command) # check that the condition is valid
             except SyntaxError:
-                print("'", command, "'", "is not expression or line")
+                print("'" + command + "'", "is not expression or line")
             except NameError:
                 cls.until_expr = command # nameError might happen in this namespace but it might be valid condition somewhere else
             else:
@@ -245,7 +245,7 @@ class Seapie:
                 cls.scope -= 1
         elif magicstring in ("!0namespace", "!0"):
             cls.scope = 0
-        elif magicstring[:6] == "!code " or magicstring[:3] == "!c ":
+        elif magicstring[:6] in ("!code ", "!code") or magicstring[:3] in ("!c ", "!c"):
             if magicstring[:6] == "!code ":
                 argument = magicstring[6:]
             if magicstring[:3] == "!c ":
@@ -253,8 +253,8 @@ class Seapie:
             try:
                 frame = sys._getframe(cls.scope+2)
                 source = inspect.getsource(eval(argument, frame.f_globals, frame.f_locals))
-            except:
-                traceback.print_exc()
+            except :
+                print(traceback.format_exc().splitlines()[-1])
             else:
                 print()
                 for line in source.splitlines():
@@ -271,9 +271,9 @@ class Seapie:
         while True:
             try:
                 if not accumulator:  # if on first line of incoming block
-                    raw_text = input(str("(S) " + sys.ps1))
+                    raw_text = input(str("(S2) " + sys.ps1))
                 else:  # if on continuing line
-                    raw_text = input(str("(S) " + sys.ps2))
+                    raw_text = input(str("(S2) " + sys.ps2))
             except KeyboardInterrupt:  # emulate behaviour of ctrl+c
                 print("\nKeyboardInterrupt")
                 accumulator = ""
@@ -321,7 +321,7 @@ except AttributeError:
 
 
 def trace_calls(frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
-    # print("Entering scope",  frame.f_code.co_name) make this conditinal?
+    print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name) # make this conditinal?
     return Seapie._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
 
