@@ -128,6 +128,7 @@ class Seapie:
             "(!0)namespace : Go back to currently executing scope",
             "",
             "(!c)ode obj   : Show source code of object",
+            "                └─> e.g.: code my_function_name"
             "",
             "(!s)tep       : Execute the next line of source code",
             "(!u)ntil 1234 : Step until line source code line 1234",
@@ -244,6 +245,21 @@ class Seapie:
                 cls.scope -= 1
         elif magicstring in ("!0namespace", "!0"):
             cls.scope = 0
+        elif magicstring[:6] == "!code " or magicstring[:3] == "!c ":
+            if magicstring[:6] == "!code ":
+                argument = magicstring[6:]
+            if magicstring[:3] == "!c ":
+                argument = magicstring[3:]
+            try:
+                frame = sys._getframe(cls.scope+2)
+                source = inspect.getsource(eval(argument, frame.f_globals, frame.f_locals))
+            except:
+                traceback.print_exc()
+            else:
+                print()
+                for line in source.splitlines():
+                    print("    " + line.rstrip())
+                print()
         else:
             print("Unknown magic command!")
 
