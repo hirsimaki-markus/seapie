@@ -1,140 +1,300 @@
-"""Seapie is debugger like tool with ability to escape scopes in call stack
+"""Seapie is debugger like tool. SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
 
-example use:
-    from seapie import Seapie as seapie
-
-    def test():
-        seapie(1, "a_variable_in_scope_of_test2_only = 'hacked'")
-        # seapie escapes the scopes and modifies it anyways
-
-    def test2():
-        a_variable_in_scope_of_test2_only = 1
-        test()
-        print(a_variable_in_scope_of_test2_only)
-
-    test2()
-
-example use2:
-    from seapie import Seapie as seapie
-
-    # your program here
-    # ...
-    seapie()  # and use !help when the prompt opens
-    # more of your program here
-    # ...
+usage as breakpoint: import seapie;seapie.seapie()
 """
 
+
 import sys
-import ctypes
 import code
-import traceback
-import inspect
 import codeop
+import inspect
+import traceback
+from ctypes import pythonapi, py_object, c_int
+
+
+
+
+class SingletonException(Exception):
+    """helper exception used in case someone tries to initialize seapie instance instead of using the class without instance"""
+    pass
+
+
+class SeapieReplExitException(Exception):
+    """raised to close seapie repl"""
+    pass
 
 
 class Seapie:
-    """Container class for seapie() and its helper functions.
+    """This class is only container. Use 'import seapie;seapie()'"""
+    exit_permanently = False
+    until_expr = None
+    until_line = None
+    scope = 0
 
-    Usage:
-        from seapie import Seapie as seapie
-        seapie(steps=0, executable=None)
+    def __init__(self):
+        """Initializes a seapie instance. seapie objects should not be initialized as the class is only a logical collection of functons"""
+        # this behaviour is chosen so that code stepping can be implemented easier
+        raise SingletonException("The Seapie class is a logical and instanceless singleton! Access the prompt with Seapie.repl() or convenient seapie() that points to Seapie.repl()")
 
-        # where "steps" means how many callstack frames seapie is supposed to
-        # escape. 0 means current namespace, 1 means parent namespace etc.
-        #
-        # and where "executable" is either code object or executable string.
-        # if no "executable" argument is given seapie opens interactive prompt.
-    """
+    @classmethod
+    def trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
+        if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
+            return
+        print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name) # make this conditinal?
+        return cls._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
-    def __init__(self, steps=0, executable=None):
-        """Initializes a seapie instance. seapie objects should not be saved"""
-        try:  # enables support for sys.ps1
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = ">>> "
-        try:  # enables support for sys.ps2
-            sys.ps2
-        except AttributeError:
-            sys.ps2 = "... "
-        self.scope = steps+2          # 2+ avoids going into seapie itself
-        self.prompt_open = True       # allows magic_handler to break repl
-        self.executable = executable  # seapie runs only this if not none
-        self.seapie()
+    @classmethod
+    def seapie(cls):
+        if not cls.exit_permanently:
+            if sys._getframe(1).f_trace is not None: # tracking is not already active
+                print("Stopping on breakpoint")
+                cls.until_expr = None
+                cls.until_line = None
+            else:
+                print("=" * 28 + "[ Starting seapie v2.0 ]" + "=" * 28)
+                sys.settrace(cls.trace_calls)
+                sys._getframe(1).f_trace = cls._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
 
-    def seapie(self):
+
+
+
+    @classmethod
+    def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
-        if self.executable is None:
-            print("=======[  SEAPIE v1.2 type !help for SEAPIE help  ]=======")
-        while self.prompt_open:
-            parent = sys._getframe(self.scope)  # frame enclosing seapie() call
-            parent_globals = parent.f_globals
-            parent_locals = parent.f_locals
-            if self.executable:                 # if executable block is given
-                codeblock = self.executable     # only the executable is ran
-                self.prompt_open = False        # and prompt closes after it
+        while True:
+            codeblock = cls._step_until_handler(frame)
+            if isinstance(codeblock, str):  # got magic string
+                try:
+                    cls.magic_handler(codeblock)
+                    continue # magic is handled. get new command
+                except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
+                    return
+                    #return cls._repl_and_tracelines # this might be needed but not really??
             else:
-                codeblock = self.single_prompt()
-            if isinstance(codeblock, str):  # got string or failed code object
-                if codeblock[0] == "!":     # got magic string
-                    self.magic_handler(codeblock)
-                    continue
-            try:
-                exec(codeblock, parent_globals, parent_locals)
-                # the following call forces update to locals()
-                # adding new variables is allowed but calling them requires
-                # some indirection like using exec() or a placeholder
-                # otherwise you will get nameerror
-                ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent),
-                                                      ctypes.c_int(1))
-            except Exception:  # catch arbitary exceptions from exec
-                traceback.print_exc()
-        if self.executable is None:
-            print("=======[  Closing SEAPIE v1.1 prompt. Continuing  ]=======")
+                #try:
+                cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
+                #except Exception:  # catch arbitary exceptions from exec
+                #    traceback.print_exc()
 
-    def magic_handler(self, magicstring):
-        """Any magic strings starting with ! are handled here"""
-        if magicstring == "!exit":
-            self.prompt_open = False
-        elif magicstring == "!scope":
-            print(sys._getframe(self.scope+1).f_code.co_name)
-        elif magicstring == "!help":
-            print("SEAPIE v1.1 type !help for SEAPIE help\n")
-            print("!help   : this message")
-            print("!exit   : exit seapie and continue exection")
-            print("!scope  : view currently used namespace from callstack")
-            print("!tree   : view current call stack")
-            print("!scope+ : increase scope, move towards global namespace")
-            print("!scope- : decrease scope, move towards local namespace")
-        elif magicstring == "!scope-":
-            if self.scope >= 3:  # avoid going into seapie module itself
-                self.scope -= 1
+    @classmethod
+    def _step_until_handler(cls, frame):
+        """returns executable block of code or !step magic string if required by !until condition"""
+        # no special until conditions
+        if cls.until_line is None and cls.until_expr is None:
+            return cls.single_prompt()
+        # walk to line condition
+        elif cls.until_line is not None:
+            if cls.until_line != frame.f_lineno:
+                return "!step"
             else:
-                print("cant go higher than current call")
-        elif magicstring == "!scope+":
+                cls.until_line = None
+                return cls.single_prompt()
+        # walk until expression
+        elif cls.until_expr is not None:
             try:
-                sys._getframe(self.scope+2)  # avoid calling nonexisting frame
-            except ValueError:
-                print("call stack is not deep enough")
+                if eval(cls.until_expr, frame.f_globals, frame.f_locals):
+                    cls.until_expr = None
+                    return cls.single_prompt()
+                else:
+                    return "!step"
+            except NameError: # could not find variable to even try to satisfy condition. skipping.
+                return "!step"
+
+    @classmethod
+    def arbitary_scope_exec(cls, codeblock, scope=0):
+        parent = sys._getframe(cls.scope+scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
+        # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
+        parent_globals = parent.f_globals
+        parent_locals = parent.f_locals
+        try:
+            exec(codeblock, parent_globals, parent_locals)
+        except KeyboardInterrupt:  # emulate behaviour of ctrl+c
+            print("\nKeyboardInterrupt")
+        except Exception:  # catch arbitary exceptions from exec
+            traceback.print_exc()
+        # the following call forces update to locals()
+        # adding new variables is allowed but calling them requires
+        # some indirection like using exec() or a placeholder
+        # otherwise you will get nameError when calling the variable
+        # the magic value 1 stands for ability to introduce new variables. 0 for update-only
+        pythonapi.PyFrame_LocalsToFast(py_object(parent), c_int(1))
+
+    @classmethod
+    def magic_handler(cls, magicstring):
+        """Any magic strings starting with ! are handled here"""
+        if magicstring in ("!help", "!h"):
+            help = [" ",
+            "(!h)elp       : Show this info block",
+            "(!e)xit       : Close seapie, end tracing and resume main",
+            "(!q)uit       : Exit and ignore all future breakpoints",
+            "",
+            "(!t)raceback  : Show traceback excluding seapie",
+            "(!l)ocals     : locals() in prettyprinted from",
+            "(!g)lobals    : globals() in prettyprinted from",
+            "(!w)here      : Show executing line and it's surroundings",
+            "",
+            "(!n)amespace  : Show current scope/namespace name",
+            "(!+)namespace : Go down in callstack towards global scope",
+            "(!-)namespace : Go up in callstack towards local scope",
+            "(!0)namespace : Go back to currently executing scope",
+            "",
+            "(!s)tep       : Execute the next line of source code",
+            "(!r)un        : Execute until hitting seapiebreakpoint()",
+            "(!u)ntil 1234 : Step until line source code line 1234",
+            "                └─> note: line must be executable code;",
+            "                          not comment, def or class etc.",
+            "(!u)ntil expr : Step until eval('my_expression') == True",
+            "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
+            "                └─> note: eval is done in executing scope",
+            "                          be aware of side effects",
+            "(!c)ode obj   : Show source code of object",
+            "                └─> e.g.: code my_function_name",
+            ""]
+            for line in help: print("    " + line)
+        elif magicstring in ("!exit", "!e"):
+            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
+            sys.settrace(None)
+            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            # stepping is caused by re-entering seapie
+            # SeapieReplExitException is used to exit seapie
+            # and re-entering wont happen because tracing was unset
+            raise SeapieReplExitException
+        elif magicstring in ("!quit", "!q"):
+            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno, "and ignoring future breakpoints")
+            sys.settrace(None)
+            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            cls.exit_permanently = True
+            # stepping is caused by re-entering seapie
+            # SeapieReplExitException is used to exit seapie
+            # and re-entering wont happen because tracing was unset
+            raise SeapieReplExitException
+        elif magicstring in ("!step", "!s"):
+            if cls.scope != 0:
+                print("Stepping is only available in current namespace")
+                # print("Use '!step force' to bypass this warning")
             else:
-                self.scope += 1
-        elif magicstring == "!tree":
+                print("Executed line", sys._getframe(cls.scope+2).f_lineno)
+                # stepping is caused by re-entering seapie
+                # SeapieReplExitException is used to exit seapie
+                # and it is re-entering because of tracing
+                raise SeapieReplExitException
+        elif magicstring in ("!run", "!r"):
+            cls.scope = 0
+            cls.until_expr = "False" # this will run until hitting breakpoint as this will always evaluate to False
+        elif magicstring[:7] in ("!until ", "!until") or magicstring[:3] in ("!u ", "!u"):
+            if cls.scope != 0:
+                print("Stepping is only available in current namespace")
+                #print("Use '!until expr force' to bypass this warning")
+                #print("Use '!until 1234 force ' to bypass this warning")
+                return
+            if magicstring[:6] == "!until":
+                command = magicstring[7:]
+            elif magicstring[:2] == "!u":
+                command = magicstring[3:]
+            # this try block sets stepping to line
+            try:
+                cls.until_line = int(command)
+            except ValueError: # the command was not intended to be linenumber
+                pass
+            else:
+                return
+            # this block sets stepping to expressions
+            try:
+                eval(command) # check that the condition is valid
+            except SyntaxError:
+                print("'" + command + "'", "is not expression or line")
+            except NameError:
+                cls.until_expr = command # nameError might happen in this namespace but it might be valid condition somewhere else
+            else:
+                cls.until_expr = command
+        elif magicstring in ("!traceback", "!t"):
             print()
-            for call in traceback.format_stack()[:-3]:
+            for call in traceback.format_stack()[:-2]:
                 print(call)
+        elif magicstring in ("!where", "!w"):
+            # getsourcefile
+            # getsourcelines
+            current_line = sys._getframe(cls.scope+2).f_lineno
+            path = inspect.getsourcefile(sys._getframe(cls.scope+2))
+            with open(path, "r", encoding="utf-8") as file:
+                source = file.read().splitlines()
+            print()
+            for line_no, line in enumerate(source):
+                line_no +=1 # fix off by one. enumerate starts at 0
+                if current_line == line_no:
+                    print("--->")
+                if abs(line_no+0.6 - current_line) <= 5: # +0.6 rounds so that even amount of lines is shown instead of odd
+                    print("   ", line_no, line)
+            print()
+        elif magicstring in ("!locals", "!l"):
+            # normal locals() cant be used here. it displays wrong scope.
+            frame = sys._getframe(cls.scope+2)
+            print()
+            try:
+                max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
+            except ValueError: # there are no keys
+                return
+            for name, value in frame.f_locals.items():
+                pad = (max_pad-len(name))*" "
+                print("   ", name + pad, "=", value)
+            print()
+        elif magicstring in ("!globals", "!g"):
+            # normal globals() cant be used here. it displays wrong scope.
+            frame = sys._getframe(cls.scope+2)
+            print()
+            try:
+                max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
+            except ValueError: # there are no keys
+                return
+            for name, value in frame.f_globals.items():
+                pad = (max_pad-len(name))*" "
+                print("   ", name + pad, "=", value)
+            print()
+        elif magicstring in ("!namespace", "!n"):
+            print(sys._getframe(cls.scope+2).f_code.co_name)
+        elif magicstring in ("!+namespace", "!+"):
+            try:
+                sys._getframe(cls.scope+3)  # +2 like elsewhere to escape seapie itself and +1 for lookahead
+            except ValueError:
+                print("Call stack is not deep enough")
+            else:
+                cls.scope += 1
+        elif magicstring in ("!-namespace", "!-"):
+            if cls.scope == 0:
+                print("You are at the top of stack (seapie is excluded)")
+            else:
+                cls.scope -= 1
+        elif magicstring in ("!0namespace", "!0"):
+            cls.scope = 0
+        elif magicstring[:6] in ("!code ", "!code") or magicstring[:3] in ("!c ", "!c"):
+            if magicstring[:6] == "!code ":
+                argument = magicstring[6:]
+            if magicstring[:3] == "!c ":
+                argument = magicstring[3:]
+            try:
+                frame = sys._getframe(cls.scope+2)
+                source = inspect.getsource(eval(argument, frame.f_globals, frame.f_locals))
+            except :
+                print(traceback.format_exc().splitlines()[-1])
+            else:
+                print()
+                for line in source.splitlines():
+                    print("    " + line.rstrip())
+                print()
         else:
             print("Unknown magic command!")
 
     @staticmethod
     def single_prompt():
-        """Interactive prompt that returns single expression/statement"""
+        """Interactive prompt that stays open until it can return single compiled expression/statement or magic string"""
         accumulator = ""
         raw_text = ""
         while True:
             try:
                 if not accumulator:  # if on first line of incoming block
-                    raw_text = input(str(sys.ps1))
+                    raw_text = input(str("(S2) " + sys.ps1))
                 else:  # if on continuing line
-                    raw_text = input(str(sys.ps2))
+                    raw_text = input(str("(S2) " + sys.ps2))
             except KeyboardInterrupt:  # emulate behaviour of ctrl+c
                 print("\nKeyboardInterrupt")
                 accumulator = ""
@@ -157,31 +317,31 @@ class Seapie:
             try:
                 result = code.compile_command(accumulator)
             except SyntaxError:  # allow incorrect commands to just pass thru
-                return accumulator
+                # return accumulator # tämä muutos alla korjaa lambdat???
+                traceback.print_exc()
+                accumulator = ""
+                continue
             if result is None:
                 pass  # incomplete but possibly valid command
             else:
                 return result
 
-if __name__ == "__main__":
-    print("""
-    # You should probably not be running this file as is unless you wanted to
-    # open seapie prompt outside of your program. try the following in your app
-    # as using seapie from the interactive prompt might cause problems
+seapie = Seapie.seapie
 
-    from seapie import Seapie as seapie
-    def test():
-        seapie(1, "a_variable_in_scope_of_test2_only = 'hacked'")
-        # seapie escapes the scopes and modifies it anyways
-    def test2():
-        a_variable_in_scope_of_test2_only = 1
-        test()
-        print(a_variable_in_scope_of_test2_only)
-    test2()
-    """)
-    def test():
-        Seapie()
-    def test2():
-        a_variable_in_scope_of_test2_only = 1
-        test()
-    test2()
+
+
+# THIS BLOCK IS RUN AT IMPORT TIME
+# it is INTENTIONALLY not placed inside of """ if name: '__main__': """
+# as it is used to initialize the library during import
+# and it is used to initialize sys.ps1 and sys.ps2
+
+# support for sys.ps1 and sys.ps2
+try:
+    sys.ps1
+except AttributeError:
+    sys.ps1 = ">>> "
+try:
+   sys.ps2
+except AttributeError:
+    sys.ps2 = "... "
+
