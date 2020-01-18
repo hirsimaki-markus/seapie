@@ -1,23 +1,17 @@
 """Seapie is debugger like tool. SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
 
 usage as breakpoint: import seapie;seapie.seapie()
-
-usage as true exec: import seapie;seapie.true_exec(codeblock, scope=0)
-    * where codeblock is raw string or compiled code suitable normal exec()
-    * where scope states how many scope should be escape. 0 stands for executing in parent scope.
-
-example: import seapie;seapie.true_exec("x=5", scope=0)
-    * changes x in calling scope to value of 5.
-    * this cant create new variables. they will nameError.
-    * scope=1 would change value of x in the scope that encloses the caller of true_exec
 """
 
+
 import sys
-import ctypes
 import code
-import traceback
-import inspect
 import codeop
+import inspect
+import traceback
+from ctypes import pythonapi, py_object, c_int
+
+
 
 
 class SingletonException(Exception):
@@ -30,10 +24,9 @@ class SeapieReplExitException(Exception):
     pass
 
 
-
 class Seapie:
-    """Container class for seapie() and its helper functions."""
-
+    """This class is only container. Use 'import seapie;seapie()'"""
+    exit_permanently = False
     until_expr = None
     until_line = None
     scope = 0
@@ -44,12 +37,32 @@ class Seapie:
         raise SingletonException("The Seapie class is a logical and instanceless singleton! Access the prompt with Seapie.repl() or convenient seapie() that points to Seapie.repl()")
 
     @classmethod
+    def trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
+        if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
+            return
+        print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name) # make this conditinal?
+        return cls._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
+
+    @classmethod
+    def seapie(cls):
+        if not cls.exit_permanently:
+            if sys._getframe(1).f_trace is not None: # tracking is not already active
+                print("Stopping on breakpoint")
+                cls.until_expr = None
+                cls.until_line = None
+            else:
+                print("=" * 28 + "[ Starting seapie v2.0 ]" + "=" * 28)
+                sys.settrace(cls.trace_calls)
+                sys._getframe(1).f_trace = cls._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+
+
+
+
+    @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
-        
         while True:
             codeblock = cls._step_until_handler(frame)
-            
             if isinstance(codeblock, str):  # got magic string
                 try:
                     cls.magic_handler(codeblock)
@@ -62,7 +75,7 @@ class Seapie:
                 cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
                 #except Exception:  # catch arbitary exceptions from exec
                 #    traceback.print_exc()
-            
+
     @classmethod
     def _step_until_handler(cls, frame):
         """returns executable block of code or !step magic string if required by !until condition"""
@@ -87,7 +100,6 @@ class Seapie:
             except NameError: # could not find variable to even try to satisfy condition. skipping.
                 return "!step"
 
-                
     @classmethod
     def arbitary_scope_exec(cls, codeblock, scope=0):
         parent = sys._getframe(cls.scope+scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
@@ -105,9 +117,7 @@ class Seapie:
         # some indirection like using exec() or a placeholder
         # otherwise you will get nameError when calling the variable
         # the magic value 1 stands for ability to introduce new variables. 0 for update-only
-        ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(parent),
-                                                      ctypes.c_int(1))
-
+        pythonapi.PyFrame_LocalsToFast(py_object(parent), c_int(1))
 
     @classmethod
     def magic_handler(cls, magicstring):
@@ -116,6 +126,7 @@ class Seapie:
             help = [" ",
             "(!h)elp       : Show this info block",
             "(!e)xit       : Close seapie, end tracing and resume main",
+            "(!q)uit       : Exit and ignore all future breakpoints",
             "",
             "(!t)raceback  : Show traceback excluding seapie",
             "(!l)ocals     : locals() in prettyprinted from",
@@ -144,6 +155,15 @@ class Seapie:
             print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
             sys.settrace(None)
             sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            # stepping is caused by re-entering seapie
+            # SeapieReplExitException is used to exit seapie
+            # and re-entering wont happen because tracing was unset
+            raise SeapieReplExitException
+        elif magicstring in ("!quit", "!q"):
+            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno, "and ignoring future breakpoints")
+            sys.settrace(None)
+            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            cls.exit_permanently = True
             # stepping is caused by re-entering seapie
             # SeapieReplExitException is used to exit seapie
             # and re-entering wont happen because tracing was unset
@@ -306,37 +326,22 @@ class Seapie:
             else:
                 return result
 
+seapie = Seapie.seapie
+
+
+
 # THIS BLOCK IS RUN AT IMPORT TIME
 # it is INTENTIONALLY not placed inside of """ if name: '__main__': """
 # as it is used to initialize the library during import
 # and it is used to initialize sys.ps1 and sys.ps2
 
-try:  # enables support for sys.ps1
+# support for sys.ps1 and sys.ps2
+try:
     sys.ps1
 except AttributeError:
     sys.ps1 = ">>> "
-try:  # enables support for sys.ps2
+try:
    sys.ps2
 except AttributeError:
     sys.ps2 = "... "
-
-
-def trace_calls(frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
-    if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
-        return
-    print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name) # make this conditinal?
-    return Seapie._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
-
-
-def seapie():
-    if sys._getframe(1).f_trace is not None: # tracking is not already active
-        print("Stopping on breakpoint")
-        Seapie.until_expr = None
-        Seapie.until_line = None
-    else:
-        print("=" * 27, "[ Starting seapie v2.0 ]", "=" * 27)
-        sys.settrace(trace_calls)
-        sys._getframe(1).f_trace = Seapie._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
-
-
 
