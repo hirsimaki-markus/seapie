@@ -1,21 +1,23 @@
-"""Seapie is debugger like tool. SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
+"""Seapie debuger. Usage: import seapie;seapie.seapie() and enter !help
 
-usage as breakpoint: import seapie;seapie.seapie()
+SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
+To begin tracing call seapie.seapie() and to set breakpoint add more
+seapie.seapie() calls to breakpoint the active tracing.
+
+Distrubuted under the unlisence in 2019 and 2020 by Markus Hirsimäki
 """
 
 
 import sys
-import code
-import codeop
 import inspect
 import traceback
+from code import compile_command
 from ctypes import pythonapi, py_object, c_int
-
-
+from codeop import compile_command as compile_command_codeop
 
 
 class SingletonException(Exception):
-    """helper exception used in case someone tries to initialize seapie instance instead of using the class without instance"""
+    """Raise when Seapie class is trying to be initialized"""
     pass
 
 
@@ -25,19 +27,67 @@ class SeapieReplExitException(Exception):
 
 
 class Seapie:
-    """This class is only container. Use 'import seapie;seapie()'"""
-    exit_permanently = False
-    until_expr = None
-    until_line = None
+    """Use 'import seapie;seapie.seapie()' and enter !help
+    
+    This class is instanceless container. Do not make seapie objects.
+    All information is stored in class attributes and the class should
+    be treted as singleton
+    """
+    exit_permanently = False  # implements !quit to ignore breakpoints
+    until_expr = None  # implements '!until expression' magic command
+    until_line = None  # implements '!until linenumber' magic command
     scope = 0
 
     def __init__(self):
-        """Initializes a seapie instance. seapie objects should not be initialized as the class is only a logical collection of functons"""
-        # this behaviour is chosen so that code stepping can be implemented easier
-        raise SingletonException("The Seapie class is a logical and instanceless singleton! Access the prompt with Seapie.repl() or convenient seapie() that points to Seapie.repl()")
+        """Init should not be used. Seapie is logical singleton class"""
+        raise SingletonException("The Seapie class is a logical and ",
+        "instanceless singleton! Access it with import seapie;seapie()")
 
     @classmethod
-    def trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
+    def seapie(cls):
+        """This function starts tracing or breakpoints active tracing
+ 
+        This function wraps setting call and line tracing
+        """
+        if not cls.exit_permanently:  # this flag implements !quit
+            if sys.gettrace() is not None:
+                # seapie() already tracing. treat new call as breakpoint
+                print("Stopping on breakpoint")
+                cls.until_expr = None  # remove !until condition
+                cls.until_line = None  # to enable interactive input
+            else:
+                # seapie() is not tracing yet. start tracing
+                print("=" * 28 + "[ Starting seapie v2.0 ]" + "=" * 28)
+                sys.settrace(cls._trace_calls)
+                # setting trace function above will not start tracing
+                # in current strack frame. get previous frame aka. the
+                # parent that called seapie to begin tracing immediately
+                sys._getframe(1).f_trace = cls._repl_and_tracelines
+
+    @staticmethod
+    def true_exec(codeblock, scope):
+        parent = sys._getframe(scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
+        # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
+        parent_globals = parent.f_globals
+        parent_locals = parent.f_locals
+        try:
+            exec(codeblock, parent_globals, parent_locals)
+        except KeyboardInterrupt:  # emulate behaviour of ctrl+c
+            print("\nKeyboardInterrupt")
+        except Exception:  # catch arbitary exceptions from exec
+            traceback.print_exc()
+        # the following call forces update to locals()
+        # adding new variables is allowed but calling them requires
+        # some indirection like using exec() or a placeholder
+        # otherwise you will get nameError when calling the variable
+        # the magic value 1 stands for ability to introduce new variables. 0 for update-only
+        pythonapi.PyFrame_LocalsToFast(py_object(parent), c_int(1))
+
+
+
+
+    @classmethod
+    def _trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
     
     
         if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
@@ -45,17 +95,6 @@ class Seapie:
         print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name, "in", inspect.getsourcefile(frame)) # make this conditinal?
         return cls._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
-    @classmethod
-    def seapie(cls):
-        if not cls.exit_permanently:
-            if sys.gettrace() is not None: # tracking is not already active
-                print("Stopping on breakpoint")
-                cls.until_expr = None
-                cls.until_line = None # remove !until conditions
-            else:
-                print("=" * 28 + "[ Starting seapie v2.0 ]" + "=" * 28)
-                sys.settrace(cls.trace_calls)
-                sys._getframe(1).f_trace = cls._repl_and_tracelines # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
 
 
 
@@ -80,14 +119,14 @@ class Seapie:
             codeblock = cls._step_until_handler(frame)
             if isinstance(codeblock, str):  # got magic string
                 try:
-                    cls.magic_handler(codeblock)
+                    cls._magic_handler(codeblock)
                     continue # magic is handled. get new command
                 except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
                     return
                     #return cls._repl_and_tracelines # this might be needed but not really??
             else:
                 #try:
-                cls.arbitary_scope_exec(codeblock, 1) # 1 to escape the call to this scope
+                cls.true_exec(codeblock, cls.scope+1) # 1 to escape the call to this scope
                 #except Exception:  # catch arbitary exceptions from exec
                 #    traceback.print_exc()
 
@@ -96,46 +135,28 @@ class Seapie:
         """returns executable block of code or !step magic string if required by !until condition"""
         # no special until conditions
         if cls.until_line is None and cls.until_expr is None:
-            return cls.single_prompt()
+            return cls.get_codeblock()
         # walk to line condition
         elif cls.until_line is not None:
             if cls.until_line != frame.f_lineno:
                 return "!step"
             else:
                 cls.until_line = None
-                return cls.single_prompt()
+                return cls.get_codeblock()
         # walk until expression
         elif cls.until_expr is not None:
             try:
                 if eval(cls.until_expr, frame.f_globals, frame.f_locals):
                     cls.until_expr = None
-                    return cls.single_prompt()
+                    return cls.get_codeblock()
                 else:
                     return "!step"
             except NameError: # could not find variable to even try to satisfy condition. skipping.
                 return "!step"
 
-    @classmethod
-    def arbitary_scope_exec(cls, codeblock, scope=0):
-        parent = sys._getframe(cls.scope+scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
-        # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
-        parent_globals = parent.f_globals
-        parent_locals = parent.f_locals
-        try:
-            exec(codeblock, parent_globals, parent_locals)
-        except KeyboardInterrupt:  # emulate behaviour of ctrl+c
-            print("\nKeyboardInterrupt")
-        except Exception:  # catch arbitary exceptions from exec
-            traceback.print_exc()
-        # the following call forces update to locals()
-        # adding new variables is allowed but calling them requires
-        # some indirection like using exec() or a placeholder
-        # otherwise you will get nameError when calling the variable
-        # the magic value 1 stands for ability to introduce new variables. 0 for update-only
-        pythonapi.PyFrame_LocalsToFast(py_object(parent), c_int(1))
 
     @classmethod
-    def magic_handler(cls, magicstring):
+    def _magic_handler(cls, magicstring):
         """Any magic strings starting with ! are handled here"""
         if magicstring in ("!help", "!h"):
             help = [" ",
@@ -304,8 +325,9 @@ class Seapie:
             print("Unknown magic command!")
 
     @staticmethod
-    def single_prompt():
+    def get_codeblock():
         """Interactive prompt that stays open until it can return single compiled expression/statement or magic string"""
+        """this mimics default prompt but only stays open until it can return one expression/statement or seapie magic string"""
         accumulator = ""
         raw_text = ""
         while True:
@@ -327,14 +349,14 @@ class Seapie:
             if raw_text == "":
                 try:
                     accumulator = "\n"+accumulator
-                    codeop.compile_command(accumulator, "<input>", "single")
+                    compile_command_codeop(accumulator, "<input>", "single")
                 except:  # catch exceptions compiling and reset
                     traceback.print_exc()
                     accumulator = ""
                     continue
             accumulator += "\n"+raw_text  # manually add newline after inputs
             try:
-                result = code.compile_command(accumulator)
+                result = compile_command(accumulator)
             except SyntaxError:  # allow incorrect commands to just pass thru
                 # return accumulator # tämä muutos alla korjaa lambdat???
                 traceback.print_exc()
@@ -345,21 +367,18 @@ class Seapie:
             else:
                 return result
 
+
+# the below lines are supposed to be run at import time. they are
+# intentionally outside of any sort of if __name__ == "__main__" block
+
 seapie = Seapie.seapie
+true_exec = Seapie.true_exec
 
-
-
-# THIS BLOCK IS RUN AT IMPORT TIME
-# it is INTENTIONALLY not placed inside of """ if name: '__main__': """
-# as it is used to initialize the library during import
-# and it is used to initialize sys.ps1 and sys.ps2
-
-# support for sys.ps1 and sys.ps2
-try:
+try:  # add ps1 if it does not exist already
     sys.ps1
 except AttributeError:
     sys.ps1 = ">>> "
-try:
+try: # add ps2 if it does not exist already
    sys.ps2
 except AttributeError:
     sys.ps2 = "... "
