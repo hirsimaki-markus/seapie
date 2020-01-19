@@ -65,51 +65,61 @@ class Seapie:
                 sys._getframe(1).f_trace = cls._repl_and_tracelines
 
     @staticmethod
-    def true_exec(codeblock, scope):
-        parent = sys._getframe(scope+1)  # frame enclosing seapie() call. +1 escapes this arbitary_executor function itself
-        # sys._getframe(scope+1).f_code.co_name # frame contains multiple things like the co_name
+    def true_exec(code, scope):
+        """Performs exec on codeblock in given scope
+        
+        scope 0 equals executing in context of caller of true_exec().
+        scope 1 equals executing in context of the caller for the caller
+        of true_exec().
+        """
+        parent = sys._getframe(scope+1)  # +1 escapes true_exec itself
         parent_globals = parent.f_globals
         parent_locals = parent.f_locals
         try:
-            exec(codeblock, parent_globals, parent_locals)
-        except KeyboardInterrupt:  # emulate behaviour of ctrl+c
+            exec(code, parent_globals, parent_locals)
+        except KeyboardInterrupt:  # emulate ctrl+c if code='input()'
             print("\nKeyboardInterrupt")
         except Exception:  # catch arbitary exceptions from exec
             traceback.print_exc()
+        # beware traveller. here lies dark spell of the olden times !
         # the following call forces update to locals()
         # adding new variables is allowed but calling them requires
         # some indirection like using exec() or a placeholder
         # otherwise you will get nameError when calling the variable
-        # the magic value 1 stands for ability to introduce new variables. 0 for update-only
+        # the magic value 1 stands for ability to introduce new
+        # variables. 0 for update-only
         pythonapi.PyFrame_LocalsToFast(py_object(parent), c_int(1))
-
-
-
 
     @classmethod
     def _trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
-    
-    
-        if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
+        """This function is called every time new scope is entered when
+        tracing is active
+        """
+        if frame.f_code.co_name == "seapie" :
+            # seapie itself is not traced. it is treated as breakpoint
             return
-        print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name, "in", inspect.getsourcefile(frame)) # make this conditinal?
-        return cls._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
-
-
-
-
+        print("Executed line", frame.f_lineno, "entered",
+               frame.f_code.co_name, "in", inspect.getsourcefile(frame))
+               # TODO make this print conditinal?
+        return cls._repl_and_tracelines  # return line tracing function
 
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
-        """Main code injector loop"""
+        """Main code injector loop. Also line tracing function"""
         try:
             if str(type(arg[2])) == "<class 'traceback'>":
-                cls.until_expr = None
-                cls.until_line = None
+                # this test must be performed here as this function is
+                # the line tracer. when this if block is true it means
+                # unhandled exception happened and it should be treated
+                # as breakpoint to allow for post mortem debugging
+                cls.until_expr = None  # remove existing stepping rules
+                cls.until_line = None  # remove existing stepping rules
                 print()
+                # print traceback before the crash actually happens
                 traceback.print_exception(*arg)
                 print()
-                print("=" * 14 + "[ Entering post mortem. Program state is preserved ]" + "=" * 14)
+                print("=" * 14 + "[ Entering post mortem. "
+                      "Program state is preserved ]" + "=" * 14)
                 print("Further stepping will trace into intenal error handling and ultimatly crash")
         except TypeError: # arg was none
             pass
