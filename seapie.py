@@ -38,18 +38,20 @@ class Seapie:
 
     @classmethod
     def trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
+    
+    
         if frame.f_code.co_name == "seapie" : # dont trace seapie() itself if it is called multiple times. treat it as breakpoint
             return
-        print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name) # make this conditinal?
+        print("Executed line", frame.f_lineno, "entered", frame.f_code.co_name, "in", inspect.getsourcefile(frame)) # make this conditinal?
         return cls._repl_and_tracelines # tämö funktio suoritetaan joka kerta mutta tämän funktion sisältä ei lähdetä ?. tämä vastaa tracelinessia kutsutaan joka rivillä
 
     @classmethod
     def seapie(cls):
         if not cls.exit_permanently:
-            if sys._getframe(1).f_trace is not None: # tracking is not already active
+            if sys.gettrace() is not None: # tracking is not already active
                 print("Stopping on breakpoint")
                 cls.until_expr = None
-                cls.until_line = None
+                cls.until_line = None # remove !until conditions
             else:
                 print("=" * 28 + "[ Starting seapie v2.0 ]" + "=" * 28)
                 sys.settrace(cls.trace_calls)
@@ -61,7 +63,20 @@ class Seapie:
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
         """Main code injector loop"""
+        try:
+            if str(type(arg[2])) == "<class 'traceback'>":
+                cls.until_expr = None
+                cls.until_line = None
+                print()
+                traceback.print_exception(*arg)
+                print()
+                print("=" * 14 + "[ Entering post mortem. Program state is preserved ]" + "=" * 14)
+                print("Further stepping will trace into intenal error handling and ultimatly crash")
+        except TypeError: # arg was none
+            pass
+    
         while True:
+            #print(sys.exc_info())
             codeblock = cls._step_until_handler(frame)
             if isinstance(codeblock, str):  # got magic string
                 try:
@@ -126,7 +141,7 @@ class Seapie:
             help = [" ",
             "(!h)elp       : Show this info block",
             "(!e)xit       : Close seapie, end tracing and resume main",
-            "(!q)uit       : Exit and ignore all future breakpoints",
+            "(!q)uit       : Exit and ignore all future breakpoints and post mortem",
             "",
             "(!t)raceback  : Show traceback excluding seapie",
             "(!l)ocals     : locals() in prettyprinted from",
@@ -139,11 +154,11 @@ class Seapie:
             "(!0)namespace : Go back to currently executing scope",
             "",
             "(!s)tep       : Execute the next line of source code",
-            "(!r)un        : Execute until hitting seapiebreakpoint()",
-            "(!u)ntil 1234 : Step until line source code line 1234",
+            "(!r)un        : Execute until next seapie() breakpoint or post mortem",
+            "(!u)ntil 1234 : Step until line source code line 1234 or beakpoint or post mortem",
             "                └─> note: line must be executable code;",
             "                          not comment, def or class etc.",
-            "(!u)ntil expr : Step until eval('my_expression') == True",
+            "(!u)ntil expr : Step until eval('my_expression') == True or breakpoint ir post mortem",
             "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
             "                └─> note: eval is done in executing scope",
             "                          be aware of side effects",
@@ -179,7 +194,11 @@ class Seapie:
                 # and it is re-entering because of tracing
                 raise SeapieReplExitException
         elif magicstring in ("!run", "!r"):
-            cls.scope = 0
+            if cls.scope != 0:
+                print("Stepping is only available in current namespace")
+                #print("Use '!until expr force' to bypass this warning")
+                #print("Use '!until 1234 force ' to bypass this warning")
+                return
             cls.until_expr = "False" # this will run until hitting breakpoint as this will always evaluate to False
         elif magicstring[:7] in ("!until ", "!until") or magicstring[:3] in ("!u ", "!u"):
             if cls.scope != 0:
