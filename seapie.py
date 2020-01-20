@@ -30,7 +30,7 @@ import inspect
 import traceback
 from code import compile_command
 from ctypes import pythonapi, py_object, c_int
-from codeop import compile_command as compile_command_codeop
+from codeop import compile_command as compile_cmd_codeop
 
 
 class SingletonException(Exception):
@@ -74,7 +74,9 @@ class Seapie:
                 cls.until_line = None  # to enable interactive input
             else:
                 # seapie() is not tracing yet. start tracing
-                print("=" * 28 + "[ Starting seapie v2.0 ]" + "=" * 28)
+                print("=" * 17 +
+                      "[ Starting seapie 2.0 (enter !help for help) ]" +
+                      "=" * 17)
                 sys.settrace(cls._trace_calls)
                 # setting trace function above will not start tracing
                 # in current strack frame. get previous frame aka. the
@@ -124,24 +126,22 @@ class Seapie:
 
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
-        """Line tracing, main injector repl and post mortem trigger"""
-        try:  # post mortem check
+        """Line tracing, main injector repl and postmortem trigger"""
+        try:  # postmortem check
             if str(type(arg[2])) == "<class 'traceback'>":
                 # this test must be performed here as this function is
                 # the line tracer. when this if block is true it means
                 # unhandled exception happened and it should be treated
-                # as breakpoint to allow for post mortem debugging
+                # as breakpoint to allow for postmortem debugging
                 cls.until_expr = None  # remove existing stepping rules
                 cls.until_line = None  # remove existing stepping rules
                 print()
                 # print traceback before the crash actually happens
                 traceback.print_exception(*arg)
                 print()
-                print("=" * 14 + "[ Entering post mortem. "
-                      "Program state is preserved ]" + "=" * 14)
-                print(" (Further stepping will trace into intenal "
-                      "error handling and ultimately crash)")
-        except TypeError: # arg was none. no error. no post mortem
+                print("="*4 + "[ Starting postmortem to preserve state."
+                      " Stepping throws the exception ]" + "="*4)
+        except TypeError: # arg was none. no error. no postmortem
             pass
     
         while True:  # this is the main repl loop
@@ -181,7 +181,8 @@ class Seapie:
             try:  # nameError will happen in most scopes
                 # eval is done in the executing scope. user CAN cause
                 # side effects with strange !until expressions
-                if eval(cls.until_expr, frame.f_globals, frame.f_locals):
+                globals, locals = frame.f_globals, frame.f_locals
+                if eval(cls.until_expr, globals, locals):  # force scope
                     # found variables, condition is True
                     cls.until_expr = None  # clear condition
                     return cls.get_codeblock()  # return to interactive
@@ -194,15 +195,14 @@ class Seapie:
 
     @staticmethod
     def get_codeblock():
-        """This fakes python repl prompt that stays open until it can
+        """Fake python repl until function can return meaningful code.
         
-        return single compiled expression/statement or magic string"""
-        """this mimics default prompt but only stays open until it can return one expression/statement or seapie magic string"""
-        accumulator = ""
-        raw_text = ""
-        while True:
+        returns single compiled expression/statement or magic string"""
+        accumulator = ""  # accumulator for multiline commands
+        raw_text = ""  # single line input
+        while True:  # stay open until something can be returned
             try:
-                if not accumulator:  # if on first line of incoming block
+                if not accumulator:  # on first line of incoming block
                     raw_text = input(str("(S2) " + sys.ps1))
                 else:  # if on continuing line
                     raw_text = input(str("(S2) " + sys.ps2))
@@ -212,45 +212,61 @@ class Seapie:
                 continue
             except EOFError:  # emulate behaviour of ctrl+z
                 sys.exit(1)
-            if accumulator == "" and raw_text.startswith("!"):  # got magic
+            if accumulator == "" and raw_text.startswith("!"):
+                # got single line magic string like "!help"
                 return raw_text
-            # this block should catch situation where two or more newlines
-            # are entered during function definition or other such things
-            if raw_text == "":
+            # this block should catch situation where two newlines are
+            # entered during function definition or other such things
+            if raw_text == "":  # input was empty
                 try:
-                    accumulator = "\n"+accumulator
-                    compile_command_codeop(accumulator, "<input>", "single")
+                    # add the newline missing from previous input line
+                    # this must be done here to avoid extra newlines
+                    accumulator = "\n" + accumulator
+                    # try to compile and except for comile errors
+                    compile_cmd_codeop(accumulator, "<input>", "single")
                 except:  # catch exceptions compiling and reset
                     traceback.print_exc()
-                    accumulator = ""
+                    accumulator = ""  # reset getting input. restart
                     continue
-            accumulator += "\n"+raw_text  # manually add newline after inputs
+            # manually add newline after inputs. must be added after
+            # input, not not the end of input
+            accumulator += "\n" + raw_text
             try:
                 result = compile_command(accumulator)
-            except SyntaxError:  # allow incorrect commands to just pass thru
-                # return accumulator # tämä muutos alla korjaa lambdat???
+            except SyntaxError:  # not a valid command
                 traceback.print_exc()
                 accumulator = ""
                 continue
-            if result is None:
-                pass  # incomplete but possibly valid command
+            if result is None:  # incomplete but possibly valid command
+                pass  
             else:
-                return result
-
+                return result  # valid command inputted
 
     @classmethod
     def _magic_handler(cls, magicstring):
-        """Any magic strings starting with ! are handled here"""
+        """This function handles magic strings inputted into repl"""
         if magicstring in ("!help", "!h"):
-            help = [" ",
+            help = ["",
+            "===================[ seapie 2.0 help ]===================",
+            "",
+            "Features are listed here with their short explanations.",
+            "Any line entered starting with ! is excepted by seapie",
+            "and treated as magic command like !help. Anything else is",
+            "intepreted like the python interpreted does.",
+            "",
+            "Breakpoint means any call to seapie.seapie() and tracing",
+            "is started using the same call. Postmortem happens when",
+            "seapie traces into unhandled error and is automatic.",
+            "",
             "(!h)elp       : Show this info block",
             "(!e)xit       : Close seapie, end tracing and resume main",
-            "(!q)uit       : Exit and ignore all future breakpoints and post mortem",
+            "(!q)uit       : Exit and ignore future breakpoints",
             "",
             "(!t)raceback  : Show traceback excluding seapie",
             "(!l)ocals     : locals() in prettyprinted from",
             "(!g)lobals    : globals() in prettyprinted from",
             "(!w)here      : Show executing line and it's surroundings",
+            "                └─> utf-8 encoding assumed in source file",
             "",
             "(!n)amespace  : Show current scope/namespace name",
             "(!+)namespace : Go down in callstack towards global scope",
@@ -258,76 +274,86 @@ class Seapie:
             "(!0)namespace : Go back to currently executing scope",
             "",
             "(!s)tep       : Execute the next line of source code",
-            "(!r)un        : Execute until next seapie() breakpoint or post mortem",
-            "(!u)ntil 1234 : Step until line source code line 1234 or beakpoint or post mortem",
+            "(!r)un        : Step until next breakpoint or postmortem",
+            "(!u)ntil 1234 : Step until source code line 1234 or until",
+            "                next beakpoint or postmortem",
             "                └─> note: line must be executable code;",
             "                          not comment, def or class etc.",
-            "(!u)ntil expr : Step until eval('my_expression') == True or breakpoint ir post mortem",
+            "(!u)ntil expr : Step until eval('my_expression') == True",
+            "                or until next breakpoint or postmortem",
             "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
             "                └─> note: eval is done in executing scope",
-            "                          be aware YOU can cause side effects if given argument is for example print() or list.append()",
+            "                          and you CAN cause side effects",
             "(!c)ode obj   : Show source code of object",
             "                └─> e.g.: code my_function_name",
+            "",
+            "=========================================================",
             ""]
             for line in help: print("    " + line)
         elif magicstring in ("!exit", "!e"):
-            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno)
+            print("Continuing from line",
+                   sys._getframe(cls.scope+2).f_lineno)
             sys.settrace(None)
-            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
-            # stepping is caused by re-entering seapie
-            # SeapieReplExitException is used to exit seapie
-            # and re-entering wont happen because tracing was unset
+            # disable tracing immediately. settrace works on next frames
+            sys._getframe(cls.scope+2).f_trace = None
             raise SeapieReplExitException
         elif magicstring in ("!quit", "!q"):
-            print("Continuing from line", sys._getframe(cls.scope+2).f_lineno, "and ignoring future breakpoints")
+            print("Continuing from line",
+                   sys._getframe(cls.scope+2).f_lineno,
+                   "and ignoring future breakpoints")
             sys.settrace(None)
-            sys._getframe(cls.scope+2).f_trace = None # set tracing in the calling scope immediately. settrace enables tracing not in the immediate scope
+            # disable tracing immediately. settrace works on next frames
+            sys._getframe(cls.scope+2).f_trace = None
+            # set flag to ignore future breakpoints
             cls.exit_permanently = True
-            # stepping is caused by re-entering seapie
-            # SeapieReplExitException is used to exit seapie
-            # and re-entering wont happen because tracing was unset
             raise SeapieReplExitException
         elif magicstring in ("!step", "!s"):
             if cls.scope != 0:
-                print("Stepping is only available in current namespace")
-                # print("Use '!step force' to bypass this warning")
+                print("Stepping disabled is disabled by seapie in "
+                      "frames that are not executing. Use !0namespace "
+                      "and then try again")
             else:
-                print("Executed line", sys._getframe(cls.scope+2).f_lineno)
+                print("Executed line",
+                       sys._getframe(cls.scope+2).f_lineno)
                 # stepping is caused by re-entering seapie
                 # SeapieReplExitException is used to exit seapie
-                # and it is re-entering because of tracing
+                # and it is re-entered because of tracing
                 raise SeapieReplExitException
         elif magicstring in ("!run", "!r"):
             if cls.scope != 0:
-                print("Stepping is only available in current namespace")
-                #print("Use '!until expr force' to bypass this warning")
-                #print("Use '!until 1234 force ' to bypass this warning")
+                print("Stepping disabled is disabled by seapie in "
+                      "frames that are not executing. Use !0namespace "
+                      "and then try again")
                 return
-            cls.until_expr = "False" # this will run until hitting breakpoint as this will always evaluate to False
-        elif magicstring[:7] in ("!until ", "!until") or magicstring[:3] in ("!u ", "!u"):
+             # run until breakpoint or postmortem. always evals to False
+            cls.until_expr = "False"
+        elif (magicstring[:7] in ("!until ", "!until")
+             or magicstring[:3] in ("!u ", "!u")):
             if cls.scope != 0:
-                print("Stepping is only available in current namespace")
-                #print("Use '!until expr force' to bypass this warning")
-                #print("Use '!until 1234 force ' to bypass this warning")
+                print("Stepping disabled is disabled by seapie in "
+                      "frames that are not executing. Use !0namespace "
+                      "and then try again")
                 return
             if magicstring[:6] == "!until":
                 command = magicstring[7:]
             elif magicstring[:2] == "!u":
                 command = magicstring[3:]
-            # this try block sets stepping to line
+            # this try block sets stepping to line if argument was int
             try:
                 cls.until_line = int(command)
-            except ValueError: # the command was not intended to be linenumber
+            except ValueError:  # argument was not linenumber
                 pass
             else:
-                return
+                return  # argument was linenumber. end
             # this block sets stepping to expressions
             try:
                 eval(command) # check that the condition is valid
             except SyntaxError:
                 print("'" + command + "'", "is not expression or line")
             except NameError:
-                cls.until_expr = command # nameError might happen in this namespace but it might be valid condition somewhere else
+                # nameError might happen in this namespace
+                # but it might be valid condition somewhere else
+                cls.until_expr = command
             else:
                 cls.until_expr = command
         elif magicstring in ("!traceback", "!t"):
@@ -335,15 +361,13 @@ class Seapie:
             for call in traceback.format_stack()[:-2]:
                 print(call)
         elif magicstring in ("!where", "!w"):
-            # getsourcefile
-            # getsourcelines
             current_line = sys._getframe(cls.scope+2).f_lineno
             path = inspect.getsourcefile(sys._getframe(cls.scope+2))
+            # just assume utf8 encoding. good enough compability.
             with open(path, "r", encoding="utf-8") as file:
                 source = file.read().splitlines()
             print()
-            for line_no, line in enumerate(source):
-                line_no +=1 # fix off by one. enumerate starts at 0
+            for line_no, line in enumerate(source, 1):  # fix off by 1
                 if current_line == line_no:
                     print("--->")
                 if abs(line_no+0.6 - current_line) <= 5: # +0.6 rounds so that even amount of lines is shown instead of odd
