@@ -494,3 +494,8 @@ try: # add ps2 if it does not exist already
    sys.ps2
 except AttributeError:
     sys.ps2 = "... "
+
+
+if __name__ == "__main__":
+    print("You probably should import this file instead of running it")
+    seapie(["!help"])
