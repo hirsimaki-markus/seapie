@@ -36,7 +36,7 @@ A picture tells more than thousands words. Internal !help shown below
 
 ## Todo
 * Test how seapie works in multithreaded programs
-* Send me email if you have suggestions
+* Send me email or any message anywhere if you have suggestions 
 
 
 ## Known issues
