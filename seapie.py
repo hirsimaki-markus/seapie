@@ -1,5 +1,10 @@
 """Seapie debugger. Usage: import seapie;seapie.seapie() and enter !help
 
+For advanced use seapie accepts autoexecutable string that will be
+consumed before used is queried in the repl.
+    Example:
+        import seapie;seapie.seapie(["print('first!')"], "!verbose")
+
 SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
 To begin tracing call seapie.seapie() and to set breakpoint add more
 seapie.seapie() calls to breakpoint the active tracing.
@@ -153,8 +158,7 @@ class Seapie:
     
         while True:  # this is the main repl loop
             if cls.command_list:  # there are buffered commands incoming
-                codeblock = cls.command_list.pop(0)
-                print(cls.command_list)
+                codeblock = cls.command_list.pop(0)  # consume command
             elif cls.until_line is None and cls.until_expr is None:
                 # there are no buffered commands and no until statements
                 codeblock = cls.get_codeblock()
@@ -162,6 +166,7 @@ class Seapie:
                 # _step_until_handler will return either a !step magic
                 # string or get_codeblock()'s result if stepping is done
                 codeblock = cls._step_until_handler(frame)
+            # got codeblock. handle it
             if isinstance(codeblock, str):  # uncompiled code/magic
                 if codeblock.startswith("!"):  # magic
                     try:
