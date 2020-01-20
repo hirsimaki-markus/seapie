@@ -17,10 +17,12 @@ _Me too. I also got solution for it below._
 * ```pip3 install seapie```
 * or ```pip3 install https://github.com/hirsimaki-markus/SEAPIE/archive/master.zip```
 * or clone master, cd master, and ```pip3 install .```
+* and to uninstall ```pip3 uninstall seapie```
 
 
-## Uninstallation
-```pip3 uninstall seapie```
+## Features
+A picture tells more than thousands words. Internal !help shown below
+![](https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/seapiehelp.png)
 
 
 ## Examples
@@ -28,6 +30,7 @@ _Me too. I also got solution for it below._
 * Breakpoint your currently onging tracing: one more ```seapie()```
 * Autoexecute stuff when opening the prompt: ```seapie(["print(123)", "!step", "!verbose", "!until 420"])
 ![](https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/seapiegif.gif)
+
 
 ## Todo
 * No idea actually. Send me email if you have suggestions
