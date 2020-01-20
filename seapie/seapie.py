@@ -76,7 +76,6 @@ class Seapie:
         This function wraps setting call and line tracing
         """
         if not cls.exit_permanently:  # this flag implements !quit
-        
             if command_list is not None:
                 cls.command_list.extend(command_list)
         
@@ -132,31 +131,37 @@ class Seapie:
         if frame.f_code.co_name == "seapie" :
             # seapie itself is not traced. it is treated as breakpoint
             return
-        if cls.verbose:
-            print("Executed line", frame.f_lineno, "entered",
+        if cls.verbose and event == "call":
+            print("Line", frame.f_lineno, "executed. Entering",
                    frame.f_code.co_name, "in",
                    inspect.getsourcefile(frame))
         return cls._repl_and_tracelines  # return line tracing function
 
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
-        """Line tracing, main injector repl and postmortem trigger"""
-        try:  # postmortem check
-            if str(type(arg[2])) == "<class 'traceback'>":
-                # this test must be performed here as this function is
-                # the line tracer. when this if block is true it means
-                # unhandled exception happened and it should be treated
-                # as breakpoint to allow for postmortem debugging
-                cls.until_expr = None  # remove existing stepping rules
-                cls.until_line = None  # remove existing stepping rules
-                print()
-                # print traceback before the crash actually happens
-                traceback.print_exception(*arg)
-                print()
-                print("="*4 + "[ Starting postmortem to preserve state."
-                      " Stepping throws the exception ]" + "="*4)
-        except TypeError: # arg was none. no error. no postmortem
-            pass
+        """Event tracing, main injector repl and postmortem trigger"""
+        
+        # can only get line, return and exception here.
+        # "call" event type is in _trace_calls
+        if cls.verbose and event == "line":
+            print("Next line to execute is", frame.f_lineno)
+        elif cls.verbose and event == "return":
+            print("Line", frame.f_lineno, "executed. Next returning "
+                   "from", frame.f_code.co_name, "in",
+                   inspect.getsourcefile(frame))
+        elif event == "exception":  # postmortem check
+            # this test must be performed here as this function is
+            # the line tracer. when this if block is true it means
+            # unhandled exception happened and it should be treated
+            # as breakpoint to allow for postmortem debugging
+            cls.until_expr = None  # remove existing stepping rules
+            cls.until_line = None  # remove existing stepping rules
+            print()
+            # print traceback before the crash actually happens
+            traceback.print_exception(*arg)
+            print()
+            print("="*4 + "[ Starting postmortem to preserve state."
+                  " Stepping throws the exception ]" + "="*4)
     
         while True:  # this is the main repl loop
             if cls.command_list:  # there are buffered commands incoming
@@ -348,12 +353,9 @@ class Seapie:
                       "frames that are not executing. Use !0namespace "
                       "and then try again")
             else:
-                if cls.verbose:
-                    print("Executed line",
-                           sys._getframe(cls.scope+2).f_lineno)
-                    # stepping is caused by re-entering seapie
-                    # SeapieReplExitException is used to exit seapie
-                    # and it is re-entered because of tracing
+                # stepping is caused by re-entering seapie
+                # SeapieReplExitException is used to exit seapie
+                # and it is re-entered because of tracing
                 raise SeapieReplExitException
         elif magicstring in ("!run", "!r"):
             if cls.scope != 0:

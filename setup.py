@@ -8,7 +8,7 @@ setup(
   author = 'Markus Hirsimäki',
   author_email = 'hirsimaki.markus@gmail.com',
   url = 'https://github.com/hirsimaki-markus/SEAPIE',
-  download_url = 'https://github.com/hirsimaki-markus/SEAPIE/archive/v_1_2.tar.gz',
+  download_url = 'https://github.com/hirsimaki-markus/SEAPIE/archive/v2.0.tar.gz',
   keywords = ['debugger', 'seapie', 'interactive', 'injection', 'inject', 'repl', 'debg', 'exec'],
   install_requires=[],
   classifiers=[
