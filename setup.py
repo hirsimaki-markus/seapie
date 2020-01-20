@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'seapie',
   packages = ['seapie'],
-  version = '2.0',
+  version = '2.0.1',
   license='Unlisence',
   description = 'Seapie is easy to use python debugger',
   author = 'Markus Hirsimäki',
