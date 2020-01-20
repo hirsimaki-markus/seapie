@@ -1,4 +1,4 @@
-_Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_
+_Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
 _Have you ever wanted to debug something without ton of print()s but builtin debugger seems too clumsy?_\
 _Me too. I also got solution for it below._
 
@@ -24,16 +24,19 @@ _Me too. I also got solution for it below._
 A picture tells more than thousands words. Internal !help shown below
 ![](https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/seapiehelp.png)
 
+```import seapie;seapie.true_exec()``` is provided as interface to autoexecute of version 1.2
+
 
 ## Examples
 * Start tracing or to just open interactive prompt: ```from seapie import seapie;seapie()``` and maybe enter ```!help```
 * Breakpoint your currently onging tracing: one more ```seapie()```
-* Autoexecute stuff when opening the prompt: ```seapie(["print(123)", "!step", "!verbose", "!until 420"])
+* Autoexecute stuff when opening the prompt: ```seapie(["print(123)", "!step", "!verbose", "!until 420"])```
 ![](https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/seapiegif.gif)
 
 
 ## Todo
-* No idea actually. Send me email if you have suggestions
+* Test how seapie works in multithreaded programs
+* Send me email or any message anywhere if you have suggestions 
 
 
 ## Known issues
