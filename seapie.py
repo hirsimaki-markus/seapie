@@ -1,10 +1,27 @@
-"""Seapie debuger. Usage: import seapie;seapie.seapie() and enter !help
+"""Seapie debugger. Usage: import seapie;seapie.seapie() and enter !help
 
 SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
 To begin tracing call seapie.seapie() and to set breakpoint add more
 seapie.seapie() calls to breakpoint the active tracing.
 
 Distrubuted under the unlisence in 2019 and 2020 by Markus Hirsimäki
+
+    ><> ><> ><>             ><> ><>
+        <>< <>< <>< <><         <>< <>< <>< <><
+            ><> ><> ><> ><>     ><>#####><> ><> ><>
+            <><#####<>< <>< <>< <>< <><#####<>< <>< <><
+            ><> ><>#####><> ><> ><>#####><>#####><> ><> ><>
+                <>< <><#####<><#####<>< <>< <><#####<>< <><
+                    ><> ><>#####><> ><>     ><> ><>#####><> ><>
+                        <>< ### <><             <>< <><#<>< <>< <><
+                    ><> ><>#####><> ><>     ><> ><>#####><> ><>
+                <>< <><#####<><#####<>< <>< <><#####<>< <><
+            ><> ><>#####><> ><> ><>#####><>#####><> ><> ><>
+            <><#####<>< <>< <>< <>< <><#####<>< <>< <><
+            ><> ><> ><> ><>     ><>#####><> ><> ><>
+        <>< <>< <>< <><         <>< <>< <>< <><
+    ><> ><> ><>             ><> ><>
+
 """
 
 
