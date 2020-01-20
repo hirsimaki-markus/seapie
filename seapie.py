@@ -54,6 +54,7 @@ class Seapie:
     until_expr = None  # implements '!until expression' magic command
     until_line = None  # implements '!until linenumber' magic command
     verbose = True  # if "executed line ..." messages should be printed
+    command_list = []
     scope = 0
 
     def __init__(self):
@@ -62,12 +63,16 @@ class Seapie:
         "instanceless singleton! Access it with import seapie;seapie()")
 
     @classmethod
-    def seapie(cls):
+    def seapie(cls, command_list=None):
         """This function starts tracing or breakpoints active tracing
  
         This function wraps setting call and line tracing
         """
         if not cls.exit_permanently:  # this flag implements !quit
+        
+            if command_list is not None:
+                cls.command_list.extend(command_list)
+        
             if sys.gettrace() is not None:
                 # seapie() already tracing. treat new call as breakpoint
                 print("Stopping on breakpoint")
@@ -147,21 +152,28 @@ class Seapie:
             pass
     
         while True:  # this is the main repl loop
-            if cls.until_line is None and cls.until_expr is None:
+            if cls.command_list:  # there are buffered commands incoming
+                codeblock = cls.command_list.pop(0)
+                print(cls.command_list)
+            elif cls.until_line is None and cls.until_expr is None:
+                # there are no buffered commands and no until statements
                 codeblock = cls.get_codeblock()
             else:
                 # _step_until_handler will return either a !step magic
                 # string or get_codeblock()'s result if stepping is done
                 codeblock = cls._step_until_handler(frame)
-            if isinstance(codeblock, str):  # got magic string, not code
-                try:
-                    cls._magic_handler(codeblock)
-                    continue  # magic handling is over, return to loop
-                except SeapieReplExitException:
-                    # this is raised in magic handler if the repl
-                    # should exit. magic handler never returns anything
-                    return
-            else:  # did not get magic string but an executable object
+            if isinstance(codeblock, str):  # uncompiled code/magic
+                if codeblock.startswith("!"):  # magic
+                    try:
+                        cls._magic_handler(codeblock)
+                        continue  # magic handling is over, return to loop
+                    except SeapieReplExitException:
+                        # this is raised in magic handler if the repl
+                        # should exit. magic handler never returns anything
+                        return
+                else:  # did not get magic string but an executable str
+                    cls.true_exec(codeblock, cls.scope+1)  # +1 esc repl
+            else:  # did not get magic string but an compiled object
                 cls.true_exec(codeblock, cls.scope+1)  # +1 escapes repl
 
     @classmethod
