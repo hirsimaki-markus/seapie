@@ -34,7 +34,7 @@ from codeop import compile_command as compile_command_codeop
 
 
 class SingletonException(Exception):
-    """Raise when Seapie class is trying to be initialized"""
+    """Raised when Seapie object is trying to be initialized"""
     pass
 
 
@@ -83,7 +83,7 @@ class Seapie:
 
     @staticmethod
     def true_exec(code, scope):
-        """Performs exec on codeblock in given scope
+        """exec() a codeblock in given scope. Used by seapi repl
         
         scope 0 equals executing in context of caller of true_exec().
         scope 1 equals executing in context of the caller for the caller
@@ -108,9 +108,11 @@ class Seapie:
         pythonapi.PyFrame_LocalsToFast(py_object(parent), c_int(1))
 
     @classmethod
-    def _trace_calls(cls, frame, event, arg): # triggers on new frame (?) # tämä vastaa tracecallssia. kutsutaan scopn vaihdossa
-        """This function is called every time new scope is entered when
-        tracing is active
+    def _trace_calls(cls, frame, event, arg):
+        """This is called when new stack frame is entered during tracing
+        
+        This funtion returns the actual interactive repl that is used to
+        trace lines inside the entered stack frames
         """
         if frame.f_code.co_name == "seapie" :
             # seapie itself is not traced. it is treated as breakpoint
@@ -122,8 +124,8 @@ class Seapie:
 
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
-        """Main code injector loop. Also line tracing function"""
-        try:
+        """Line tracing, main injector repl and post mortem trigger"""
+        try:  # post mortem check
             if str(type(arg[2])) == "<class 'traceback'>":
                 # this test must be performed here as this function is
                 # the line tracer. when this if block is true it means
@@ -137,49 +139,103 @@ class Seapie:
                 print()
                 print("=" * 14 + "[ Entering post mortem. "
                       "Program state is preserved ]" + "=" * 14)
-                print("Further stepping will trace into intenal error handling and ultimatly crash")
-        except TypeError: # arg was none
+                print(" (Further stepping will trace into intenal "
+                      "error handling and ultimately crash)")
+        except TypeError: # arg was none. no error. no post mortem
             pass
     
-        while True:
-            #print(sys.exc_info())
-            codeblock = cls._step_until_handler(frame)
-            if isinstance(codeblock, str):  # got magic string
+        while True:  # this is the main repl loop
+            if cls.until_line is None and cls.until_expr is None:
+                codeblock = cls.get_codeblock()
+            else:
+                # _step_until_handler will return either a !step magic
+                # string or get_codeblock()'s result if stepping is done
+                codeblock = cls._step_until_handler(frame)
+            if isinstance(codeblock, str):  # got magic string, not code
                 try:
                     cls._magic_handler(codeblock)
-                    continue # magic is handled. get new command
-                except SeapieReplExitException: # this is raised in magic handler if the repl should exit. magic handler never returns anything
+                    continue  # magic handling is over, return to loop
+                except SeapieReplExitException:
+                    # this is raised in magic handler if the repl
+                    # should exit. magic handler never returns anything
                     return
-                    #return cls._repl_and_tracelines # this might be needed but not really??
-            else:
-                #try:
-                cls.true_exec(codeblock, cls.scope+1) # 1 to escape the call to this scope
-                #except Exception:  # catch arbitary exceptions from exec
-                #    traceback.print_exc()
+            else:  # did not get magic string but an executable object
+                cls.true_exec(codeblock, cls.scope+1)  # +1 escapes repl
 
     @classmethod
     def _step_until_handler(cls, frame):
-        """returns executable block of code or !step magic string if required by !until condition"""
-        # no special until conditions
-        if cls.until_line is None and cls.until_expr is None:
-            return cls.get_codeblock()
-        # walk to line condition
-        elif cls.until_line is not None:
-            if cls.until_line != frame.f_lineno:
+        """Wrapper function for get_codeblock that handles !until magic
+        
+        Returns plain text magic string !step or compiled code object
+        (either valid expression or statement). !step magic string is
+        automatically returned if required by !until condition given
+        before in previous command.
+        """
+        if cls.until_line is not None:  # walk to line number
+            if cls.until_line != frame.f_lineno:  # line is not reached
                 return "!step"
-            else:
-                cls.until_line = None
-                return cls.get_codeblock()
-        # walk until expression
-        elif cls.until_expr is not None:
-            try:
+            else:  # stepping has reached the target line
+                cls.until_line = None  # reset condition
+                return cls.get_codeblock()  # and return normal prompt
+        elif cls.until_expr is not None:  # walk until expr is true
+            try:  # nameError will happen in most scopes
+                # eval is done in the executing scope. user CAN cause
+                # side effects with strange !until expressions
                 if eval(cls.until_expr, frame.f_globals, frame.f_locals):
-                    cls.until_expr = None
-                    return cls.get_codeblock()
-                else:
+                    # found variables, condition is True
+                    cls.until_expr = None  # clear condition
+                    return cls.get_codeblock()  # return to interactive
+                else:  # found variables but condition is not True
                     return "!step"
-            except NameError: # could not find variable to even try to satisfy condition. skipping.
+            except NameError:
+                # could not find variable to even try to satisfy
+                # condition. skipping this line
                 return "!step"
+
+    @staticmethod
+    def get_codeblock():
+        """This fakes python repl prompt that stays open until it can
+        
+        return single compiled expression/statement or magic string"""
+        """this mimics default prompt but only stays open until it can return one expression/statement or seapie magic string"""
+        accumulator = ""
+        raw_text = ""
+        while True:
+            try:
+                if not accumulator:  # if on first line of incoming block
+                    raw_text = input(str("(S2) " + sys.ps1))
+                else:  # if on continuing line
+                    raw_text = input(str("(S2) " + sys.ps2))
+            except KeyboardInterrupt:  # emulate behaviour of ctrl+c
+                print("\nKeyboardInterrupt")
+                accumulator = ""
+                continue
+            except EOFError:  # emulate behaviour of ctrl+z
+                sys.exit(1)
+            if accumulator == "" and raw_text.startswith("!"):  # got magic
+                return raw_text
+            # this block should catch situation where two or more newlines
+            # are entered during function definition or other such things
+            if raw_text == "":
+                try:
+                    accumulator = "\n"+accumulator
+                    compile_command_codeop(accumulator, "<input>", "single")
+                except:  # catch exceptions compiling and reset
+                    traceback.print_exc()
+                    accumulator = ""
+                    continue
+            accumulator += "\n"+raw_text  # manually add newline after inputs
+            try:
+                result = compile_command(accumulator)
+            except SyntaxError:  # allow incorrect commands to just pass thru
+                # return accumulator # tämä muutos alla korjaa lambdat???
+                traceback.print_exc()
+                accumulator = ""
+                continue
+            if result is None:
+                pass  # incomplete but possibly valid command
+            else:
+                return result
 
 
     @classmethod
@@ -209,7 +265,7 @@ class Seapie:
             "(!u)ntil expr : Step until eval('my_expression') == True or breakpoint ir post mortem",
             "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
             "                └─> note: eval is done in executing scope",
-            "                          be aware of side effects",
+            "                          be aware YOU can cause side effects if given argument is for example print() or list.append()",
             "(!c)ode obj   : Show source code of object",
             "                └─> e.g.: code my_function_name",
             ""]
@@ -350,49 +406,6 @@ class Seapie:
                 print()
         else:
             print("Unknown magic command!")
-
-    @staticmethod
-    def get_codeblock():
-        """Interactive prompt that stays open until it can return single compiled expression/statement or magic string"""
-        """this mimics default prompt but only stays open until it can return one expression/statement or seapie magic string"""
-        accumulator = ""
-        raw_text = ""
-        while True:
-            try:
-                if not accumulator:  # if on first line of incoming block
-                    raw_text = input(str("(S2) " + sys.ps1))
-                else:  # if on continuing line
-                    raw_text = input(str("(S2) " + sys.ps2))
-            except KeyboardInterrupt:  # emulate behaviour of ctrl+c
-                print("\nKeyboardInterrupt")
-                accumulator = ""
-                continue
-            except EOFError:  # emulate behaviour of ctrl+z
-                sys.exit(1)
-            if accumulator == "" and raw_text.startswith("!"):  # got magic
-                return raw_text
-            # this block should catch situation where two or more newlines
-            # are entered during function definition or other such things
-            if raw_text == "":
-                try:
-                    accumulator = "\n"+accumulator
-                    compile_command_codeop(accumulator, "<input>", "single")
-                except:  # catch exceptions compiling and reset
-                    traceback.print_exc()
-                    accumulator = ""
-                    continue
-            accumulator += "\n"+raw_text  # manually add newline after inputs
-            try:
-                result = compile_command(accumulator)
-            except SyntaxError:  # allow incorrect commands to just pass thru
-                # return accumulator # tämä muutos alla korjaa lambdat???
-                traceback.print_exc()
-                accumulator = ""
-                continue
-            if result is None:
-                pass  # incomplete but possibly valid command
-            else:
-                return result
 
 
 # the below lines are supposed to be run at import time. they are
