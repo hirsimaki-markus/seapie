@@ -27,7 +27,7 @@ _Me too. I also got solution for it below._
 * Start tracing or to just open interactive prompt: ```from seapie import seapie;seapie()``` and maybe enter ```!help```
 * Breakpoint your currently onging tracing: one more ```seapie()```
 * Autoexecute stuff when opening the prompt: ```seapie(["print(123)", "!step", "!verbose", "!until 420"])
-
+![](https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/seapiegif.gif)
 
 ## Todo
 * No idea actually. Send me email if you have suggestions
