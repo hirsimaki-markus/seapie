@@ -53,6 +53,7 @@ class Seapie:
     exit_permanently = False  # implements !quit to ignore breakpoints
     until_expr = None  # implements '!until expression' magic command
     until_line = None  # implements '!until linenumber' magic command
+    verbose = True  # if "executed line ..." messages should be printed
     scope = 0
 
     def __init__(self):
@@ -119,9 +120,10 @@ class Seapie:
         if frame.f_code.co_name == "seapie" :
             # seapie itself is not traced. it is treated as breakpoint
             return
-        print("Executed line", frame.f_lineno, "entered",
-               frame.f_code.co_name, "in", inspect.getsourcefile(frame))
-               # TODO make this print conditinal?
+        if cls.verbose:
+            print("Executed line", frame.f_lineno, "entered",
+                   frame.f_code.co_name, "in",
+                   inspect.getsourcefile(frame))
         return cls._repl_and_tracelines  # return line tracing function
 
     @classmethod
@@ -261,6 +263,7 @@ class Seapie:
             "(!h)elp       : Show this info block",
             "(!e)xit       : Close seapie, end tracing and resume main",
             "(!q)uit       : Exit and ignore future breakpoints",
+            "(!v)erbose    : Toggles printing messages about exeution",
             "",
             "(!t)raceback  : Show traceback excluding seapie",
             "(!l)ocals     : locals() in prettyprinted from",
@@ -308,17 +311,24 @@ class Seapie:
             # set flag to ignore future breakpoints
             cls.exit_permanently = True
             raise SeapieReplExitException
+        elif magicstring in ("!verbose", "!v"):
+            cls.verbose = not cls.verbose
+            if cls.verbose:
+                print("Verbose mode on")
+            else:
+                print("Verbose mode off")
         elif magicstring in ("!step", "!s"):
             if cls.scope != 0:
                 print("Stepping disabled is disabled by seapie in "
                       "frames that are not executing. Use !0namespace "
                       "and then try again")
             else:
-                print("Executed line",
-                       sys._getframe(cls.scope+2).f_lineno)
-                # stepping is caused by re-entering seapie
-                # SeapieReplExitException is used to exit seapie
-                # and it is re-entered because of tracing
+                if cls.verbose:
+                    print("Executed line",
+                           sys._getframe(cls.scope+2).f_lineno)
+                    # stepping is caused by re-entering seapie
+                    # SeapieReplExitException is used to exit seapie
+                    # and it is re-entered because of tracing
                 raise SeapieReplExitException
         elif magicstring in ("!run", "!r"):
             if cls.scope != 0:
