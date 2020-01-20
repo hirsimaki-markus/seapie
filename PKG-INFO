@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: seapie
+Version: 1.2.1
+Summary: Seapie is debugger like tool with ability to escape scopes in call stack
+Home-page: https://github.com/hirsimaki-markus/SEAPIE
+Author: Markus Hirsimäki
+Author-email: hirsimaki.markus@gmail.com
+License: Unlisence
+Download-URL: https://github.com/hirsimaki-markus/SEAPIE/archive/v_1_2.tar.gz
+Description: UNKNOWN
+Keywords: debugger,seapie,interactive,injection,inject,repl
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3.7
