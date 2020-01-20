@@ -1,7 +1,9 @@
 """Seapie debugger. Usage: import seapie;seapie.seapie() and enter !help
 
 For advanced use seapie accepts autoexecutable string that will be
-consumed before used is queried in the repl.
+consumed before user is queried in the repl. Breakpoints can further
+extend the autoexecutable list. Note that breakpoints DO clear existing
+!until commands
     Example:
         import seapie;seapie.seapie(["print('first!')"], "!verbose")
 
@@ -276,6 +278,12 @@ class Seapie:
             "Breakpoint means any call to seapie.seapie() and tracing",
             "is started using the same call. Postmortem happens when",
             "seapie traces into unhandled error and is automatic.",
+            "",
+            "For advanced use seapie accepts autoexecutable strings",
+            "that will be consumed before user is queried in the repl.",
+            "Breakpoint can extend this list but it clears old !until",
+            "Example:",
+            "  import seapie;seapie.seapie(['print(123)'], '!verbose')",
             "",
             "(!h)elp       : Show this info block",
             "(!e)xit       : Close seapie, end tracing and resume main",
