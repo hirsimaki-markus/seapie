@@ -284,8 +284,9 @@ class Seapie:
             "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
             "                └─> note: eval is done in executing scope",
             "                          and you CAN cause side effects",
-            "(!c)ode obj   : Show source code of object",
-            "                └─> e.g.: code my_function_name",
+            "(!c)ode obj   : Show source code of eval('obj')",
+            "                ├─> e.g.: code my_function_name",
+            "                └─> note: you CAN eval with side effects",
             "",
             "=========================================================",
             ""]
@@ -325,7 +326,7 @@ class Seapie:
                       "frames that are not executing. Use !0namespace "
                       "and then try again")
                 return
-             # run until breakpoint or postmortem. always evals to False
+            # run until breakpoint or postmortem. always evals to False
             cls.until_expr = "False"
         elif (magicstring[:7] in ("!until ", "!until")
              or magicstring[:3] in ("!u ", "!u")):
@@ -369,16 +370,21 @@ class Seapie:
             print()
             for line_no, line in enumerate(source, 1):  # fix off by 1
                 if current_line == line_no:
+                    # show where we actually are. tracing happens
+                    # between the source lines
                     print("--->")
-                if abs(line_no+0.6 - current_line) <= 5: # +0.6 rounds so that even amount of lines is shown instead of odd
+                # +0.6 so rounding shows even amount of lines, not odd
+                if abs(line_no + 0.6 - current_line) <= 5:
                     print("   ", line_no, line)
             print()
         elif magicstring in ("!locals", "!l"):
-            # normal locals() cant be used here. it displays wrong scope.
+            # normal locals() cant be used here. it displays wrong scope
+            # so frame is used instead
             frame = sys._getframe(cls.scope+2)
             print()
             try:
-                max_pad = len(max(frame.f_locals.keys(), key=len)) # lenght of longest var name
+                # get lenght of longest var name
+                max_pad = len(max(frame.f_locals.keys(), key=len))
             except ValueError: # there are no keys
                 return
             for name, value in frame.f_locals.items():
@@ -386,11 +392,13 @@ class Seapie:
                 print("   ", name + pad, "=", value)
             print()
         elif magicstring in ("!globals", "!g"):
-            # normal globals() cant be used here. it displays wrong scope.
+            # normal globals() cant be used here, displays wrong scope
+            # so frame is used instead
             frame = sys._getframe(cls.scope+2)
             print()
             try:
-                max_pad = len(max(frame.f_globals.keys(), key=len)) # lenght of longest var name
+                # get lenght of longest var name
+                max_pad = len(max(frame.f_globals.keys(), key=len))
             except ValueError: # there are no keys
                 return
             for name, value in frame.f_globals.items():
@@ -401,34 +409,39 @@ class Seapie:
             print(sys._getframe(cls.scope+2).f_code.co_name)
         elif magicstring in ("!+namespace", "!+"):
             try:
-                sys._getframe(cls.scope+3)  # +2 like elsewhere to escape seapie itself and +1 for lookahead
+                # +2 like elsewhere to escape seapie. +1 for lookahead
+                sys._getframe(cls.scope+2+1)
             except ValueError:
                 print("Call stack is not deep enough")
             else:
                 cls.scope += 1
         elif magicstring in ("!-namespace", "!-"):
             if cls.scope == 0:
-                print("You are at the top of stack (seapie is excluded)")
+                print("You are at the top of stack (seapie excluded)")
             else:
                 cls.scope -= 1
         elif magicstring in ("!0namespace", "!0"):
             cls.scope = 0
-        elif magicstring[:6] in ("!code ", "!code") or magicstring[:3] in ("!c ", "!c"):
+        elif (magicstring[:6] in ("!code ", "!code")
+              or magicstring[:3] in ("!c ", "!c")):
             if magicstring[:6] == "!code ":
                 argument = magicstring[6:]
             if magicstring[:3] == "!c ":
                 argument = magicstring[3:]
             try:
+                # this is unsafe eval operation
                 frame = sys._getframe(cls.scope+2)
-                source = inspect.getsource(eval(argument, frame.f_globals, frame.f_locals))
-            except :
+                source = inspect.getsource(
+                         eval(argument, frame.f_globals, frame.f_locals)
+                         )
+            except:
                 print(traceback.format_exc().splitlines()[-1])
             else:
                 print()
                 for line in source.splitlines():
                     print("    " + line.rstrip())
                 print()
-        else:
+        else:  # the final fallback
             print("Unknown magic command!")
 
 
@@ -446,4 +459,3 @@ try: # add ps2 if it does not exist already
    sys.ps2
 except AttributeError:
     sys.ps2 = "... "
-
