@@ -14,6 +14,7 @@ _Me too. I also got solution for it below._
 
 
 ## Installation
+* Platform independent. Only requirement is CPython api. If you don't know what this is everything should likely work out of the box
 * ```pip3 install seapie```
 * or ```pip3 install https://github.com/hirsimaki-markus/SEAPIE/archive/master.zip```
 * or clone master, cd master, and ```pip3 install .```
