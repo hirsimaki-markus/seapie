@@ -5,7 +5,7 @@ Summary: Seapie is easy to use python debugger
 Home-page: https://github.com/hirsimaki-markus/SEAPIE
 Author: Markus Hirsimäki
 Author-email: hirsimaki.markus@gmail.com
-License: Unlisence
+License: Unlicense
 Download-URL: https://github.com/hirsimaki-markus/SEAPIE/archive/v_2_0.tar.gz
 Description: README.md
 Keywords: debugger,seapie,interactive,injection,inject,repl,debug,exec

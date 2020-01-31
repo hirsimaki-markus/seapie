@@ -7,7 +7,7 @@ _Me too. I also got solution for it below._
 # SEAPIE 2.0
 
 <!--
-<img src="./images/version.svg"> <img src="./images/releasedate.svg"> <img src="./images/python-ver.svg"> <img src="./images/size.svg">  <img src="./images/lisence.svg"> <img src="./images/implementation.svg">
+<img src="./images/version.svg"> <img src="./images/releasedate.svg"> <img src="./images/python-ver.svg"> <img src="./images/size.svg">  <img src="./images/license.svg"> <img src="./images/implementation.svg">
 -->
 
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
@@ -45,4 +45,4 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Unlicensing
-Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
+Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020

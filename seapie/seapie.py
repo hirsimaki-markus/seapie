@@ -11,7 +11,7 @@ SEAPIE stands for Scope Escaping Arbitary Python Injection Executor
 To begin tracing call seapie.seapie() and to set breakpoint add more
 seapie.seapie() calls to breakpoint the active tracing.
 
-Distrubuted under the unlisence in 2019 and 2020 by Markus Hirsimäki
+Distrubuted under the unlicense in 2019 and 2020 by Markus Hirsimäki
 
     ><> ><> ><>             ><> ><>
         <>< <>< <>< <><         <>< <>< <>< <><
