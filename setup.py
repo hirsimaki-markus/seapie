@@ -3,7 +3,7 @@ setup(
   name = 'seapie',
   packages = ['seapie'],
   version = '2.0.1',
-  license='Unlisence',
+  license='Unlicense',
   description = 'Seapie is easy to use python debugger',
   author = 'Markus Hirsimäki',
   author_email = 'hirsimaki.markus@gmail.com',
