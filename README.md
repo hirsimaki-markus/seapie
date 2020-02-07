@@ -45,4 +45,4 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Unlicensing
-Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlisence.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
+Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
