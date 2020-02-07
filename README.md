@@ -1,5 +1,6 @@
 _Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
 _Have you ever wanted to debug something without ton of print()s but builtin debugger seems too clumsy?_\
+
 _Me too. I also got solution for it below._
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
