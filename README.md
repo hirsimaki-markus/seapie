@@ -7,7 +7,7 @@ _Me too. I also got solution for it below._
 # SEAPIE 2.0
 
 
-<img src="./images/downloads.svg"> <img src="./images/first-release.svg"> <img src="./images/implementation.svg"> <img src="./images/license.svg">  <img src="./images/python-ver.svg"> <img src="./images/size.svg"> <img src="./images/version.svg">
+<img src="./images/downloads.svg"> <img src="./images/license.svg"> <img src="./images/first-release.svg"> <img src="./images/implementation.svg"> <img src="./images/python-ver.svg"> <img src="./images/size.svg"> <img src="./images/version.svg">
 
 
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
