@@ -1,5 +1,5 @@
 _Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
-_Have you ever wanted to debug something without ton of print()s but builtin debugger seems too clumsy?_\
+_Have you ever wanted to debug something without ton of print()s but builtin debugger seems too clumsy?_
 
 _Me too. I also got solution for it below._
 
