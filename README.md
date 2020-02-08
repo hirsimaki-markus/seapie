@@ -5,10 +5,10 @@ _Me too. I also got solution for it below._
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
-# SEAPIE 2.0
+# SEAPIE 2.0.1
 
 
-<img src="./images/downloads.svg"> <img src="./images/license.svg"> <img src="./images/size.svg"> <img src="./images/first-release.svg"> <img src="./images/implementation.svg"> <img src="./images/python-ver.svg"> <img src="./images/version.svg">
+<img src="./images/downloads.svg"> <img src="./images/dependencies.svg"> <img src="./images/license.svg"> <img src="./images/size.svg"> <img src="./images/first-release.svg"> <img src="./images/implementation.svg"> <img src="./images/python-ver.svg"> <img src="./images/version.svg">
 
 
 ```SEAPIE``` stands for Scope Escaping Arbitrary Python Injection Executor
@@ -31,7 +31,7 @@ A picture tells more than thousands words. Internal !help shown below
 
 ## Examples
 * Start tracing or to just open interactive prompt: ```from seapie import seapie;seapie()``` and maybe enter ```!help```
-* Breakpoint your currently onging tracing: one more ```seapie()```
+* Breakpoint your currently onging tracing: step until next ```seapie()``` by using ```!run``` or whatever suits you
 * Autoexecute stuff when opening the prompt: ```seapie(["print(123)", "!step", "!verbose", "!until 420"])```
 ![](https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/seapiegif.gif)
 
