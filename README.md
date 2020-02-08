@@ -3,7 +3,7 @@ _Have you ever wanted to debug something without ton of print()s but builtin deb
 
 _Me too. I also got solution for it below._
 
-<img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
+<img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="100" height="100"/>
 
 # SEAPIE 2.0.1
 
