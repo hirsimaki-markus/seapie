@@ -5,7 +5,7 @@ _Me too. I also got solution for it below._
 
 <img src="https://raw.githubusercontent.com/hirsimaki-markus/SEAPIE/master/images/SEAPIE.png" width="70" height="70"/>
 
-# SEAPIE 2.0
+# SEAPIE 2.0.1
 
 
 <img src="./images/downloads.svg"> <img src="./images/license.svg"> <img src="./images/size.svg"> <img src="./images/first-release.svg"> <img src="./images/implementation.svg"> <img src="./images/python-ver.svg"> <img src="./images/version.svg">
