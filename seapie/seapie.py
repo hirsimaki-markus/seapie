@@ -52,7 +52,7 @@ class SeapieReplExitException(Exception):
 
 class Seapie:
     """Use 'import seapie;seapie.seapie()' and enter !help
-    
+
     This class is instanceless container. Do not make seapie objects.
     All information is stored in class attributes and the class should
     be treted as singleton
@@ -66,19 +66,21 @@ class Seapie:
 
     def __init__(self):
         """Init should not be used. Seapie is logical singleton class"""
-        raise SingletonException("The Seapie class is a logical and ",
-        "instanceless singleton! Access it with import seapie;seapie()")
+        raise SingletonException(
+            "The Seapie class is a logical and ",
+            "instanceless singleton! Access it with import seapie;seapie()"
+        )
 
     @classmethod
     def seapie(cls, command_list=None):
         """This function starts tracing or breakpoints active tracing
- 
+
         This function wraps setting call and line tracing
         """
         if not cls.exit_permanently:  # this flag implements !quit
             if command_list is not None:
                 cls.command_list.extend(command_list)
-        
+
             if sys.gettrace() is not None:
                 # seapie() already tracing. treat new call as breakpoint
                 print("Stopping on breakpoint")
@@ -98,7 +100,7 @@ class Seapie:
     @staticmethod
     def true_exec(code, scope):
         """exec() a codeblock in given scope. Used by seapi repl
-        
+
         scope 0 equals executing in context of caller of true_exec().
         scope 1 equals executing in context of the caller for the caller
         of true_exec().
@@ -124,31 +126,35 @@ class Seapie:
     @classmethod
     def _trace_calls(cls, frame, event, arg):
         """This is called when new stack frame is entered during tracing
-        
+
         This funtion returns the actual interactive repl that is used to
         trace lines inside the entered stack frames
         """
-        if frame.f_code.co_name == "seapie" :
+        if frame.f_code.co_name == "seapie":
             # seapie itself is not traced. it is treated as breakpoint
             return
         if cls.verbose and event == "call":
-            print("Line", frame.f_lineno, "executed. Entering",
-                   frame.f_code.co_name, "in",
-                   inspect.getsourcefile(frame))
+            print(
+                "Line", frame.f_lineno, "executed. Entering",
+                frame.f_code.co_name, "in",
+                inspect.getsourcefile(frame)
+            )
         return cls._repl_and_tracelines  # return line tracing function
 
     @classmethod
     def _repl_and_tracelines(cls, frame, event, arg):
         """Event tracing, main injector repl and postmortem trigger"""
-        
+
         # can only get line, return and exception here.
         # "call" event type is in _trace_calls
         if cls.verbose and event == "line":
             print("Next line to execute is", frame.f_lineno)
         elif cls.verbose and event == "return":
-            print("Line", frame.f_lineno, "executed. Next returning "
-                   "from", frame.f_code.co_name, "in",
-                   inspect.getsourcefile(frame))
+            print(
+                "Line", frame.f_lineno, "executed. Next returning "
+                "from", frame.f_code.co_name, "in",
+                inspect.getsourcefile(frame)
+            )
         elif event == "exception":  # postmortem check
             # this test must be performed here as this function is
             # the line tracer. when this if block is true it means
@@ -162,7 +168,7 @@ class Seapie:
             print()
             print("="*4 + "[ Starting postmortem to preserve state."
                   " Stepping throws the exception ]" + "="*4)
-    
+
         while True:  # this is the main repl loop
             if cls.command_list:  # there are buffered commands incoming
                 codeblock = cls.command_list.pop(0)  # consume command
@@ -191,7 +197,7 @@ class Seapie:
     @classmethod
     def _step_until_handler(cls, frame):
         """Wrapper function for get_codeblock that handles !until magic
-        
+
         Returns plain text magic string !step or compiled code object
         (either valid expression or statement). !step magic string is
         automatically returned if required by !until condition given
@@ -222,7 +228,7 @@ class Seapie:
     @staticmethod
     def get_codeblock():
         """Fake python repl until function can return meaningful code.
-        
+
         returns single compiled expression/statement or magic string"""
         accumulator = ""  # accumulator for multiline commands
         raw_text = ""  # single line input
@@ -250,7 +256,8 @@ class Seapie:
                     accumulator = "\n" + accumulator
                     # try to compile and except for comile errors
                     compile_cmd_codeop(accumulator, "<input>", "single")
-                except:  # catch exceptions compiling and reset
+                # catch exceptions compiling and reset
+                except:  # noqa: E722
                     traceback.print_exc()
                     accumulator = ""  # reset getting input. restart
                     continue
@@ -264,7 +271,7 @@ class Seapie:
                 accumulator = ""
                 continue
             if result is None:  # incomplete but possibly valid command
-                pass  
+                pass
             else:
                 return result  # valid command inputted
 
@@ -272,69 +279,76 @@ class Seapie:
     def _magic_handler(cls, magicstring):
         """This function handles magic strings inputted into repl"""
         if magicstring in ("!help", "!h"):
-            help = ["",
-            "===================[ seapie 2.0 help ]===================",
-            "",
-            "Features are listed here with their short explanations.",
-            "Any line entered starting with ! is excepted by seapie",
-            "and treated as magic command like !help. Anything else is",
-            "intepreted like the python interpreted does.",
-            "",
-            "Breakpoint means any call to seapie.seapie() and tracing",
-            "is started using the same call. Postmortem happens when",
-            "seapie traces into unhandled error and is automatic.",
-            "",
-            "For advanced use seapie accepts autoexecutable strings",
-            "that will be consumed before user is queried in the repl.",
-            "Breakpoint can extend this list but it clears old !until",
-            "Example:",
-            "  import seapie;seapie.seapie(['print(123)'], '!verbose')",
-            "",
-            "(!h)elp       : Show this info block",
-            "(!e)xit       : Close seapie, end tracing and resume main",
-            "(!q)uit       : Exit and ignore future breakpoints",
-            "(!v)erbose    : Toggles printing messages about exeution",
-            "",
-            "(!t)raceback  : Show traceback excluding seapie",
-            "(!l)ocals     : locals() in prettyprinted from",
-            "(!g)lobals    : globals() in prettyprinted from",
-            "(!w)here      : Show executing line and it's surroundings",
-            "                └─> utf-8 encoding assumed in source file",
-            "",
-            "(!n)amespace  : Show current scope/namespace name",
-            "(!+)namespace : Go down in callstack towards global scope",
-            "(!-)namespace : Go up in callstack towards local scope",
-            "(!0)namespace : Go back to currently executing scope",
-            "",
-            "(!s)tep       : Execute the next line of source code",
-            "(!r)un        : Step until next breakpoint or postmortem",
-            "(!u)ntil 1234 : Step until source code line 1234 or until",
-            "                next beakpoint or postmortem",
-            "                └─> note: line must be executable code;",
-            "                          not comment, def or class etc.",
-            "(!u)ntil expr : Step until eval('my_expression') == True",
-            "                or until next breakpoint or postmortem",
-            "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
-            "                └─> note: eval is done in executing scope",
-            "                          and you CAN cause side effects",
-            "(!c)ode obj   : Show source code of eval('obj')",
-            "                ├─> e.g.: code my_function_name",
-            "                └─> note: you CAN eval with side effects",
-            "",
-            "=========================================================",
-            ""]
-            for line in help: print("    " + line)
+            help = [
+                "",
+                "===================[ seapie 2.0 help ]===================",
+                "",
+                "Features are listed here with their short explanations.",
+                "Any line entered starting with ! is excepted by seapie",
+                "and treated as magic command like !help. Anything else is",
+                "intepreted like the python interpreted does.",
+                "",
+                "Breakpoint means any call to seapie.seapie() and tracing",
+                "is started using the same call. Postmortem happens when",
+                "seapie traces into unhandled error and is automatic.",
+                "",
+                "For advanced use seapie accepts autoexecutable strings",
+                "that will be consumed before user is queried in the repl.",
+                "Breakpoint can extend this list but it clears old !until",
+                "Example:",
+                "  import seapie;seapie.seapie(['print(123)'], '!verbose')",
+                "",
+                "(!h)elp       : Show this info block",
+                "(!e)xit       : Close seapie, end tracing and resume main",
+                "(!q)uit       : Exit and ignore future breakpoints",
+                "(!v)erbose    : Toggles printing messages about exeution",
+                "",
+                "(!t)raceback  : Show traceback excluding seapie",
+                "(!l)ocals     : locals() in prettyprinted from",
+                "(!g)lobals    : globals() in prettyprinted from",
+                "(!w)here      : Show executing line and it's surroundings",
+                "                └─> utf-8 encoding assumed in source file",
+                "",
+                "(!n)amespace  : Show current scope/namespace name",
+                "(!+)namespace : Go down in callstack towards global scope",
+                "(!-)namespace : Go up in callstack towards local scope",
+                "(!0)namespace : Go back to currently executing scope",
+                "",
+                "(!s)tep       : Execute the next line of source code",
+                "(!r)un        : Step until next breakpoint or postmortem",
+                "(!u)ntil 1234 : Step until source code line 1234 or until",
+                "                next beakpoint or postmortem",
+                "                └─> note: line must be executable code;",
+                "                          not comment, def or class etc.",
+                "(!u)ntil expr : Step until eval('my_expression') == True",
+                "                or until next breakpoint or postmortem",
+                "                ├─> e.g.: '!u x==10' or '!u bool(my_var)'",
+                "                └─> note: eval is done in executing scope",
+                "                          and you CAN cause side effects",
+                "(!c)ode obj   : Show source code of eval('obj')",
+                "                ├─> e.g.: code my_function_name",
+                "                └─> note: you CAN eval with side effects",
+                "",
+                "=========================================================",
+                ""
+            ]
+            for line in help:
+                print("    " + line)
         elif magicstring in ("!exit", "!e"):
-            print("Continuing from line",
-                   sys._getframe(cls.scope+2).f_lineno)
+            print(
+                "Continuing from line",
+                sys._getframe(cls.scope+2).f_lineno
+            )
             sys.settrace(None)
             # disable tracing immediately. settrace works on next frames
             sys._getframe(cls.scope+2).f_trace = None
             raise SeapieReplExitException
         elif magicstring in ("!quit", "!q"):
-            print("Continuing from line",
-                   sys._getframe(cls.scope+2).f_lineno,
-                   "and ignoring future breakpoints")
+            print(
+                "Continuing from line",
+                sys._getframe(cls.scope+2).f_lineno,
+                "and ignoring future breakpoints"
+            )
             sys.settrace(None)
             # disable tracing immediately. settrace works on next frames
             sys._getframe(cls.scope+2).f_trace = None
@@ -365,8 +379,10 @@ class Seapie:
                 return
             # run until breakpoint or postmortem. always evals to False
             cls.until_expr = "False"
-        elif (magicstring[:7] in ("!until ", "!until")
-             or magicstring[:3] in ("!u ", "!u")):
+        elif (
+            magicstring[:7] in ("!until ", "!until")
+            or magicstring[:3] in ("!u ", "!u")
+        ):
             if cls.scope != 0:
                 print("Stepping disabled is disabled by seapie in "
                       "frames that are not executing. Use !0namespace "
@@ -385,7 +401,7 @@ class Seapie:
                 return  # argument was linenumber. end
             # this block sets stepping to expressions
             try:
-                eval(command) # check that the condition is valid
+                eval(command)  # check that the condition is valid
             except SyntaxError:
                 print("'" + command + "'", "is not expression or line")
             except NameError:
@@ -422,7 +438,7 @@ class Seapie:
             try:
                 # get lenght of longest var name
                 max_pad = len(max(frame.f_locals.keys(), key=len))
-            except ValueError: # there are no keys
+            except ValueError:  # there are no keys
                 return
             for name, value in frame.f_locals.items():
                 pad = (max_pad-len(name))*" "
@@ -436,7 +452,7 @@ class Seapie:
             try:
                 # get lenght of longest var name
                 max_pad = len(max(frame.f_globals.keys(), key=len))
-            except ValueError: # there are no keys
+            except ValueError:  # there are no keys
                 return
             for name, value in frame.f_globals.items():
                 pad = (max_pad-len(name))*" "
@@ -471,7 +487,7 @@ class Seapie:
                 source = inspect.getsource(
                          eval(argument, frame.f_globals, frame.f_locals)
                          )
-            except:
+            except:  # noqa: E722
                 print(traceback.format_exc().splitlines()[-1])
             else:
                 print()
@@ -492,8 +508,8 @@ try:  # add ps1 if it does not exist already
     sys.ps1
 except AttributeError:
     sys.ps1 = ">>> "
-try: # add ps2 if it does not exist already
-   sys.ps2
+try:  # add ps2 if it does not exist already
+    sys.ps2
 except AttributeError:
     sys.ps2 = "... "
 
