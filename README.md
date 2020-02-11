@@ -37,6 +37,9 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Todo
+* Add message when !quit has been used and breakpoint is skipped
+* Add verbsose toggle to previous
+* Create decorator for autotracing and excepting functions
 * Test how seapie works in multithreaded programs
 * Send me email or any message anywhere if you have suggestions 
 
