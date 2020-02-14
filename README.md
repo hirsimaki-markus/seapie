@@ -37,6 +37,8 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Todo
+* Implement "rerun" function
+* Add check for console width to enable some functionality
 * Add message to notify user if update is available
 * Add exit banner/message
 * Add message when !quit has been used and breakpoint is skipped
