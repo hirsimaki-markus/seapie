@@ -67,8 +67,8 @@ class Seapie:
     def __init__(self):
         """Init should not be used. Seapie is logical singleton class"""
         raise SingletonException(
-            "The Seapie class is a logical and ",
-            "instanceless singleton! Access it with import seapie;seapie()"
+            "The Seapie class is logical class and an instanceless ",
+            "singleton! Access it with 'import seapie;seapie()'"
         )
 
     @classmethod
@@ -77,7 +77,10 @@ class Seapie:
 
         This function wraps setting call and line tracing
         """
-        if not cls.exit_permanently:  # this flag implements !quit
+        if cls.exit_permanently:  # this flag implements !quit
+            if cls.verbose:
+                print("Skipped breakpoint since !quit was used before")
+        else:
             if command_list is not None:
                 cls.command_list.extend(command_list)
 
@@ -184,10 +187,10 @@ class Seapie:
                 if codeblock.startswith("!"):  # magic
                     try:
                         cls._magic_handler(codeblock)
-                        continue  # magic handling is over, return to loop
+                        continue  # magic handler over, return to loop
                     except SeapieReplExitException:
                         # this is raised in magic handler if the repl
-                        # should exit. magic handler never returns anything
+                        # should exit. magic handler returns always None
                         return
                 else:  # did not get magic string but an executable str
                     cls.true_exec(codeblock, cls.scope+1)  # +1 esc repl
@@ -257,7 +260,7 @@ class Seapie:
                     # try to compile and except for comile errors
                     compile_cmd_codeop(accumulator, "<input>", "single")
                 # catch exceptions compiling and reset
-                except:  # noqa: E722
+                except:
                     traceback.print_exc()
                     accumulator = ""  # reset getting input. restart
                     continue
@@ -487,7 +490,7 @@ class Seapie:
                 source = inspect.getsource(
                          eval(argument, frame.f_globals, frame.f_locals)
                          )
-            except:  # noqa: E722
+            except:
                 print(traceback.format_exc().splitlines()[-1])
             else:
                 print()
