@@ -37,12 +37,10 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Todo
-* Implement "rerun" function
-* Add check for console width to enable some functionality
+* Implement "rerun" functionality
+* Add check for console width to enable some functionalities
 * Add message to notify user if update is available
 * Add exit banner/message
-* Add message when !quit has been used and breakpoint is skipped
-* Add verbsose toggle to previous
 * Create decorator for autotracing and excepting functions
 * Test how seapie works in multithreaded programs
 * Send me email or any message anywhere if you have suggestions 
