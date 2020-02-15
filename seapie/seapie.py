@@ -350,6 +350,9 @@ class Seapie:
             sys.settrace(None)
             # disable tracing immediately. settrace works on next frames
             sys._getframe(cls.scope+2).f_trace = None
+            print("=" * 29 +
+                  "[ Closing seapie 2.0 ]" +
+                  "=" * 29)
             raise SeapieReplExitException
         elif magicstring in ("!quit", "!q"):
             print(
@@ -362,6 +365,9 @@ class Seapie:
             sys._getframe(cls.scope+2).f_trace = None
             # set flag to ignore future breakpoints
             cls.exit_permanently = True
+            print("=" * 29 +
+                  "[ Closing seapie 2.0 ]" +
+                  "=" * 29)
             raise SeapieReplExitException
         elif magicstring in ("!verbose", "!v"):
             cls.verbose = not cls.verbose
