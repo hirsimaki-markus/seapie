@@ -86,9 +86,14 @@ class Seapie:
 
             if sys.gettrace() is not None:
                 # seapie() already tracing. treat new call as breakpoint
-                print("Stopping on breakpoint")
-                cls.until_expr = None  # remove !until condition
-                cls.until_line = None  # to enable interactive input
+                if any([cls.until_expr, cls.until_line]):
+                    # only one of the above should be true at any time
+                    if cls.verbose:
+                        print("Stopping on breakpoint")
+                    cls.until_expr = None  # remove !until conditions
+                    cls.until_line = None  # to enable interactive input
+                elif cls.verbose:
+                    print("Passed breakpoint")
             else:
                 # seapie() is not tracing yet. start tracing
                 print("=" * 17 +
