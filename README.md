@@ -37,7 +37,8 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Todo
-* Implement "rerun" functionality
+* Implement some sort of autocomplete by using ```readline``` library
+* Implement "rerun" functionality using os level ```exec```. In-memory process replacing exec is only available on linux
 * Add check for console width to enable some functionalities
 * Add message to notify user if update is available
 * Add exit banner/message
