@@ -47,6 +47,8 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Known issues
+* Using arrow keys in seapie prompt might result in keycodes like ```^[[A``` being displayed. This should be fixed by also import readline along with seapie ``import readline;import seapie;seapie.seapie()``
+
 * ```import seapie;seapie.seapie(["plaintextstring"])``` seems to have side effect of setting ```__doc__``` to ```"plaintextstring"```. This should not be problem as autoexecuting just plain string is useless.
 
 
