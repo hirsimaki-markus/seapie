@@ -37,14 +37,14 @@ A picture tells more than thousands words. Internal !help shown below
 
 
 ## Todo
-* Implement some sort of autocomplete by using ```readline``` library
-* Implement "rerun" functionality using os level ```exec```. In-memory process replacing exec is only available on linux
-* Add check for console width to enable some functionalities
-* Add message to notify user if update is available
+* Fix know issues
+* Add check for console width to make prettyprinting easier
 * Add exit banner/message
 * Create decorator for autotracing and excepting functions
-* Test how seapie works in multithreaded programs
-* Send me email or any message anywhere if you have suggestions 
+* Test how seapie works in multithreaded and multiprocessing programs
+* Remove unnecessary features
+* Improve on how seapie is imported. Maybe remove singleton requirement.
+* Send me email or any message anywhere if you have suggestions
 
 
 ## Known issues
