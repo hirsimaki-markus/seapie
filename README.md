@@ -47,6 +47,7 @@ A picture tells more than thousands words. Internal !help shown below
 * Send me email or any message anywhere if you have suggestions
 * !r will uselessly stop in loops. Replace with stopping on seapie instead.
 * Maybe do something useful with ! and !!
+* Improve exit and quit, add abilty to just kill the entire thing
 
 
 ## Known issues
