@@ -45,6 +45,7 @@ A picture tells more than thousands words. Internal !help shown below
 * Remove unnecessary features
 * Improve on how seapie is imported. Maybe remove singleton requirement.
 * Send me email or any message anywhere if you have suggestions
+* !r will uselessly stop in loops. Replace with stopping on seapie instead.
 
 
 ## Known issues
