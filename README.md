@@ -51,7 +51,7 @@ A picture tells more than thousands words. Internal !help shown below
 * Show all local and globals from all scopes?
 * Auo post mortem? Run until crash then trigger seapie?
 * History file?
-* Make !l and !g display only keys to avoid absolutely flooding the console. Maybe limit print size.
+* Make !l and !g display only keys to avoid absolutely flooding the console. Maybe limit print size. Maybe autocomplete from locals. This is stateless unlike history.
 
 
 ## Known issues
