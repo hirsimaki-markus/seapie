@@ -52,7 +52,7 @@ A picture tells more than thousands words. Internal !help shown below
 * Auo post mortem? Run until crash then trigger seapie?
 * History file?
 * Make !l and !g display only keys to avoid absolutely flooding the console. Maybe limit print size. Maybe autocomplete from locals. This is stateless unlike history.
-* List comprehensions sometimes produce nameerror when referring to local variable
+* List comprehensions sometimes produce nameerror when referring to local variable. Ipython has the same behaviour, might be unable to fix this. Problem is that new closure is created with list comprehension.
 
 
 ## Known issues
