@@ -68,6 +68,7 @@ A picture tells more than thousands words. Internal !help shown below
 * !w can crash seapie in some situations
 
 * Triggering seapie in list comprehension causes incorrect behaviours. E.g. [seapie.seapie() for i in "a"]. Seems to trigger multiple seapie instances.
+* The above applies to all generators probably
 
 ## Unlicensing
 Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
