@@ -59,6 +59,7 @@ A picture tells more than thousands words. Internal !help shown below
     * Fix could be for seapie to automagically inject new stuff into the exec namespace when the scope is list comprehension. Or maybe some flag to trigger this.
     * Or maybe do some rewriting and use the builtin code.InteractiveConsole.interact. Actually, scratch that. Cant change parent scope with this.
 * Display traceback on seapie startup if there is traceback waiting for try, catch > seapie block
+* Overzealous postmortem check (triggers on generator exception and whatnots?) could be causing this behaviour.
 
 ## Known issues
 * Using arrow keys in seapie prompt might result in keycodes like ```^[[A``` being displayed. This should be fixed by also importing readline along with seapie ``import readline;import seapie;seapie.seapie()``
