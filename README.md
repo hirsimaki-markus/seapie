@@ -53,7 +53,7 @@ A picture tells more than thousands words. Internal !help shown below
 * History file?
 * Make !l and !g display only keys to avoid absolutely flooding the console. Maybe limit print size. Maybe autocomplete from locals. This is stateless unlike history.
 * List comprehensions sometimes produce nameerror when referring to local variable. Ipython has the same behaviour, might be unable to fix this. Problem is that new closure is created with list comprehension. A bypass can be achieved with eval("[rules for i in range(3)]", locals()).
-    * The problem occurs, for example, when trying to access nonglobal name like this [x[0] for i in x]
+    * The problem occurs, for example, when trying to access nonglobal name like this [x[0] for i in x] when x was defined outside of interactive seapie session
     * "The runcode() method of InteractiveInterpreter in code.py uses the 'self.locals' dictionary as the 'globals' parameter of the invoked exec() function. And the do_interact() method of Pdb instantiates InteractiveInterpreter with 'locals' as a merge of the current frame's locals and globals dictionary. This explains why the interact command of pdb evaluates sucessfully the generator expression: the generator function object is evaluated by the interpreter in a frame where 'locals' is NULL (see fast_function() in ceval.c) and 'globals' includes now the debugged frame locals dictionary."
     * So a fix for this problem is to have the default() method of pdb be implemented in the same manner as do_interact() and the runcode() method of InteractiveInterpreter. The attached patch does this.
     * Fix could be for seapie to automagically inject new stuff into the exec namespace when the scope is list comprehension. Or maybe some flag to trigger this.
