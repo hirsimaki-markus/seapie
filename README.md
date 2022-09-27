@@ -67,7 +67,7 @@ A picture tells more than thousands words. Internal !help shown below
 * ```import seapie;seapie.seapie(["plaintextstring"])``` seems to have side effect of setting ```__doc__``` to ```"plaintextstring"```. This should not be problem as autoexecuting just plain string is useless.
 
 * !w can crash seapie in some situations
-
+* Improve !w to show filename
 * Triggering seapie in list comprehension causes incorrect behaviours. E.g. [seapie.seapie() for i in "a"]. Seems to trigger multiple seapie instances.
 * The above applies to all generators probably
 * Add step to line number
