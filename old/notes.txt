@@ -218,3 +218,21 @@ A picture tells more than thousands words. Internal !help shown below
 
 ## Unlicensing
 Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
+
+
+laita varoitus jos koodia ajetaan pienemmällä versiolla kuin 3.12 koska list comprehension muuttui silloin
+3.13 annotation scope tuleeko tää sotkemaan jotain?
+
+threading.settrace_all_threads() and threading.setprofile_all_threads() vois ehkä sallia sen että
+toinen thread kuuntelee salaa sokettia ja random kohdassa aloittaa tracettamisen muualla
+
+pep709 on se mistä roikkuu list comprehension ja pep669 on se mistä roikkuu tracetus
+
+cv lätinää: ymmärrän miten jotku tosi detaili asiat niinku vaikka nää pepit mitkä tuli pari kk
+sit vaikuttaa debuggeriin
+
+itse asiassa sys.monitoring ei toimikkaan tähän tarkoitukseen kun ei saa frameja
+
+mieti mitä kaikea kannattaa paljastaa seapien sisältä. funktiot ei toimi yksin.
+
+kato se vanha readme että onko bugit korjattu mitä listattu

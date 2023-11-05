@@ -42,11 +42,13 @@ from codeop import compile_command as compile_cmd_codeop
 
 class SingletonException(Exception):
     """Raised when Seapie object is trying to be initialized"""
+
     pass
 
 
 class SeapieReplExitException(Exception):
     """raised to close seapie repl"""
+
     pass
 
 
@@ -57,6 +59,7 @@ class Seapie:
     All information is stored in class attributes and the class should
     be treted as singleton
     """
+
     exit_permanently = False  # implements !quit to ignore breakpoints
     until_expr = None  # implements '!until expression' magic command
     until_line = None  # implements '!until linenumber' magic command
@@ -68,7 +71,7 @@ class Seapie:
         """Init should not be used. Seapie is logical singleton class"""
         raise SingletonException(
             "The Seapie class is logical class and an instanceless ",
-            "singleton! Access it with 'import seapie;seapie()'"
+            "singleton! Access it with 'import seapie;seapie()'",
         )
 
     @classmethod
@@ -96,9 +99,11 @@ class Seapie:
                     print("Passed breakpoint")
             else:
                 # seapie() is not tracing yet. start tracing
-                print("=" * 17 +
-                      "[ Starting seapie 2.0 (enter !help for help) ]" +
-                      "=" * 17)
+                print(
+                    "=" * 17
+                    + "[ Starting seapie 2.0 (enter !help for help) ]"
+                    + "=" * 17
+                )
                 sys.settrace(cls._trace_calls)
                 # setting trace function above will not start tracing
                 # in current strack frame. get previous frame aka. the
@@ -113,7 +118,7 @@ class Seapie:
         scope 1 equals executing in context of the caller for the caller
         of true_exec().
         """
-        parent = sys._getframe(scope+1)  # +1 escapes true_exec itself
+        parent = sys._getframe(scope + 1)  # +1 escapes true_exec itself
         parent_globals = parent.f_globals
         parent_locals = parent.f_locals
         try:
@@ -143,9 +148,12 @@ class Seapie:
             return
         if cls.verbose and event == "call":
             print(
-                "Line", frame.f_lineno, "executed. Entering",
-                frame.f_code.co_name, "in",
-                inspect.getsourcefile(frame)
+                "Line",
+                frame.f_lineno,
+                "executed. Entering",
+                frame.f_code.co_name,
+                "in",
+                inspect.getsourcefile(frame),
             )
         return cls._repl_and_tracelines  # return line tracing function
 
@@ -159,9 +167,12 @@ class Seapie:
             print("Next line to execute is", frame.f_lineno)
         elif cls.verbose and event == "return":
             print(
-                "Line", frame.f_lineno, "executed. Next returning "
-                "from", frame.f_code.co_name, "in",
-                inspect.getsourcefile(frame)
+                "Line",
+                frame.f_lineno,
+                "executed. Next returning " "from",
+                frame.f_code.co_name,
+                "in",
+                inspect.getsourcefile(frame),
             )
         elif event == "exception":  # postmortem check
             # this test must be performed here as this function is
@@ -174,8 +185,10 @@ class Seapie:
             # print traceback before the crash actually happens
             traceback.print_exception(*arg)
             print()
-            print("="*4 + "[ Starting postmortem to preserve state."
-                  " Stepping throws the exception ]" + "="*4)
+            print(
+                "=" * 4 + "[ Starting postmortem to preserve state."
+                " Stepping throws the exception ]" + "=" * 4
+            )
 
         while True:  # this is the main repl loop
             if cls.command_list:  # there are buffered commands incoming
@@ -198,9 +211,9 @@ class Seapie:
                         # should exit. magic handler returns always None
                         return
                 else:  # did not get magic string but an executable str
-                    cls.true_exec(codeblock, cls.scope+1)  # +1 esc repl
+                    cls.true_exec(codeblock, cls.scope + 1)  # +1 esc repl
             else:  # did not get magic string but an compiled object
-                cls.true_exec(codeblock, cls.scope+1)  # +1 escapes repl
+                cls.true_exec(codeblock, cls.scope + 1)  # +1 escapes repl
 
     @classmethod
     def _step_until_handler(cls, frame):
@@ -338,36 +351,29 @@ class Seapie:
                 "                └─> note: you CAN eval with side effects",
                 "",
                 "=========================================================",
-                ""
+                "",
             ]
             for line in help:
                 print("    " + line)
         elif magicstring in ("!exit", "!e"):
-            print(
-                "Continuing from line",
-                sys._getframe(cls.scope+2).f_lineno
-            )
+            print("Continuing from line", sys._getframe(cls.scope + 2).f_lineno)
             sys.settrace(None)
             # disable tracing immediately. settrace works on next frames
-            sys._getframe(cls.scope+2).f_trace = None
-            print("=" * 29 +
-                  "[ Closing seapie 2.0 ]" +
-                  "=" * 29)
+            sys._getframe(cls.scope + 2).f_trace = None
+            print("=" * 29 + "[ Closing seapie 2.0 ]" + "=" * 29)
             raise SeapieReplExitException
         elif magicstring in ("!quit", "!q"):
             print(
                 "Continuing from line",
-                sys._getframe(cls.scope+2).f_lineno,
-                "and ignoring future breakpoints"
+                sys._getframe(cls.scope + 2).f_lineno,
+                "and ignoring future breakpoints",
             )
             sys.settrace(None)
             # disable tracing immediately. settrace works on next frames
-            sys._getframe(cls.scope+2).f_trace = None
+            sys._getframe(cls.scope + 2).f_trace = None
             # set flag to ignore future breakpoints
             cls.exit_permanently = True
-            print("=" * 29 +
-                  "[ Closing seapie 2.0 ]" +
-                  "=" * 29)
+            print("=" * 29 + "[ Closing seapie 2.0 ]" + "=" * 29)
             raise SeapieReplExitException
         elif magicstring in ("!verbose", "!v"):
             cls.verbose = not cls.verbose
@@ -377,9 +383,11 @@ class Seapie:
                 print("Verbose mode off")
         elif magicstring in ("!step", "!s"):
             if cls.scope != 0:
-                print("Stepping disabled is disabled by seapie in "
-                      "frames that are not executing. Use !0namespace "
-                      "and then try again")
+                print(
+                    "Stepping disabled is disabled by seapie in "
+                    "frames that are not executing. Use !0namespace "
+                    "and then try again"
+                )
             else:
                 # stepping is caused by re-entering seapie
                 # SeapieReplExitException is used to exit seapie
@@ -387,20 +395,24 @@ class Seapie:
                 raise SeapieReplExitException
         elif magicstring in ("!run", "!r"):
             if cls.scope != 0:
-                print("Stepping disabled is disabled by seapie in "
-                      "frames that are not executing. Use !0namespace "
-                      "and then try again")
+                print(
+                    "Stepping disabled is disabled by seapie in "
+                    "frames that are not executing. Use !0namespace "
+                    "and then try again"
+                )
                 return
             # run until breakpoint or postmortem. always evals to False
             cls.until_expr = "False"
-        elif (
-            magicstring[:7] in ("!until ", "!until")
-            or magicstring[:3] in ("!u ", "!u")
+        elif magicstring[:7] in ("!until ", "!until") or magicstring[:3] in (
+            "!u ",
+            "!u",
         ):
             if cls.scope != 0:
-                print("Stepping disabled is disabled by seapie in "
-                      "frames that are not executing. Use !0namespace "
-                      "and then try again")
+                print(
+                    "Stepping disabled is disabled by seapie in "
+                    "frames that are not executing. Use !0namespace "
+                    "and then try again"
+                )
                 return
             if magicstring[:6] == "!until":
                 command = magicstring[7:]
@@ -429,8 +441,8 @@ class Seapie:
             for call in traceback.format_stack()[:-2]:
                 print(call)
         elif magicstring in ("!where", "!w"):
-            current_line = sys._getframe(cls.scope+2).f_lineno
-            path = inspect.getsourcefile(sys._getframe(cls.scope+2))
+            current_line = sys._getframe(cls.scope + 2).f_lineno
+            path = inspect.getsourcefile(sys._getframe(cls.scope + 2))
             # just assume utf8 encoding. good enough compability.
             with open(path, "r", encoding="utf-8") as file:
                 source = file.read().splitlines()
@@ -447,7 +459,7 @@ class Seapie:
         elif magicstring in ("!locals", "!l"):
             # normal locals() cant be used here. it displays wrong scope
             # so frame is used instead
-            frame = sys._getframe(cls.scope+2)
+            frame = sys._getframe(cls.scope + 2)
             print()
             try:
                 # get lenght of longest var name
@@ -455,13 +467,13 @@ class Seapie:
             except ValueError:  # there are no keys
                 return
             for name, value in frame.f_locals.items():
-                pad = (max_pad-len(name))*" "
+                pad = (max_pad - len(name)) * " "
                 print("   ", name + pad, "=", value)
             print()
         elif magicstring in ("!globals", "!g"):
             # normal globals() cant be used here, displays wrong scope
             # so frame is used instead
-            frame = sys._getframe(cls.scope+2)
+            frame = sys._getframe(cls.scope + 2)
             print()
             try:
                 # get lenght of longest var name
@@ -469,15 +481,15 @@ class Seapie:
             except ValueError:  # there are no keys
                 return
             for name, value in frame.f_globals.items():
-                pad = (max_pad-len(name))*" "
+                pad = (max_pad - len(name)) * " "
                 print("   ", name + pad, "=", value)
             print()
         elif magicstring in ("!namespace", "!n"):
-            print(sys._getframe(cls.scope+2).f_code.co_name)
+            print(sys._getframe(cls.scope + 2).f_code.co_name)
         elif magicstring in ("!+namespace", "!+"):
             try:
                 # +2 like elsewhere to escape seapie. +1 for lookahead
-                sys._getframe(cls.scope+2+1)
+                sys._getframe(cls.scope + 2 + 1)
             except ValueError:
                 print("Call stack is not deep enough")
             else:
@@ -489,18 +501,17 @@ class Seapie:
                 cls.scope -= 1
         elif magicstring in ("!0namespace", "!0"):
             cls.scope = 0
-        elif (magicstring[:6] in ("!code ", "!code")
-              or magicstring[:3] in ("!c ", "!c")):
+        elif magicstring[:6] in ("!code ", "!code") or magicstring[:3] in ("!c ", "!c"):
             if magicstring[:6] == "!code ":
                 argument = magicstring[6:]
             if magicstring[:3] == "!c ":
                 argument = magicstring[3:]
             try:
                 # this is unsafe eval operation
-                frame = sys._getframe(cls.scope+2)
+                frame = sys._getframe(cls.scope + 2)
                 source = inspect.getsource(
-                         eval(argument, frame.f_globals, frame.f_locals)
-                         )
+                    eval(argument, frame.f_globals, frame.f_locals)
+                )
             except:
                 print(traceback.format_exc().splitlines()[-1])
             else:
