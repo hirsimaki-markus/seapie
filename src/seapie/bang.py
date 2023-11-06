@@ -51,8 +51,13 @@ def bang_handler(user_input, frame, event, arg):
         print_source_lines(frame)
         return "continue-in-repl"
     elif user_input.startswith("!g") or user_input.startswith("!goto"):
+        # must use startswith since argument is expected
         do_goto(frame, user_input)
         return "continue-in-repl"
+    elif user_input in ("!u", "!up"):
+        CURRENT_SETTINGS["callstack_escape_level"] += 1
+    elif user_input in ("!d", "!down"):
+        CURRENT_SETTINGS["callstack_escape_level"] -= 1
     else:
         if user_input.startswith("!"):  # got an invalid bang
             print(f"Invalid bang {user_input}")

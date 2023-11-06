@@ -163,6 +163,16 @@ def repl_loop(frame, event, arg):
         sys.settrace(None)
         return
 
+    # Escape to frame according to settings
+    original_frame = frame
+    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
+        if frame.f_back is None:  # Check if end of stack reached
+            print("Callstack too short for escape level. Using default frame.")
+            frame = original_frame
+            break
+        else:
+            frame = frame.f_back
+
     while True:
         # status
         if CURRENT_SETTINGS["show_bar"]:
