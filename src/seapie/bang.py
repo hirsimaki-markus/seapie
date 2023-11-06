@@ -4,6 +4,7 @@ bang handler stuff
 
 import sys
 import traceback
+from .repl import CURRENT_SETTINGS
 
 
 def bang_handler(bang, frame):
@@ -32,6 +33,9 @@ def bang_handler(bang, frame):
     elif bang in ("!t", "!traceback", "!tb"):
         print_tb(frame, 0)  # there are no seapie related frames to hide since
         # there is no exception going on.
+        return "continue-in-repl"
+    elif bang in ("!b", "!bar"):
+        CURRENT_SETTINGS["show_bar"] = not CURRENT_SETTINGS["show_bar"]
         return "continue-in-repl"
     else:
         if bang.startswith("!"):  # got an invalid bang

@@ -12,6 +12,11 @@ from .bang import bang_handler, print_tb
 PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
 PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
 
+# State that will persist over different calls to prompt().
+# These settings can be modified by anyone anywhere. they are not passed as
+# arguments.
+CURRENT_SETTINGS = {"show_bar": True}
+
 
 def repl_input(frame):
     """Fake python repl until we can return meaningful code.

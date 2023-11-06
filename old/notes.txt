@@ -257,7 +257,7 @@ testaa saako tracetettua itsensä. jos saa niin
 
 ! ja !! ja !!!        mitä nää tekee? ehkä sama kuin ipython _ ja __ ja ___ ?
 !(h)elp               this help
-!(p)in                status bar
+!(b)ar                toggles status bar printing on/off
 !(w)here              printtaa source linejä
 !(f)rame              antaa referenssin frameen jota debugataan nyt. tai ehkä alin frame. frame globaaliin. ehkä id() mukaan mutta ei oo sama ku reprissä. meh. ja muistutus että del frame.
 !(i)info              sama tieto kuin status bar
