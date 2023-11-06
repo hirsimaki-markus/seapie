@@ -7,7 +7,7 @@ import sys
 from .version import seapie_ver
 from .status import status_bar, get_status
 from .bang import bang_handler, print_tb
-from .settings import CURRENT_SETTINGS
+from .settings import CURRENT_SETTINGS, __DEFAULT_SETTINGS__
 
 
 # These can be set to anything
@@ -80,8 +80,8 @@ def repl_input(frame):
             print(
                 "\nFailed to read from stdin with input(). Was there another"
                 " breakpoint after try-except in which you called !e or exit()"
-                " during an exception event? If that was the cause, use !q"
-                " instead. "
+                " during an exception event? If that was the cause, use"
+                " os._exit(0) instead."
             )
             # one way to cause this is to step into try-except block and
             # exit() during exception event while there is new breakpoint
@@ -124,17 +124,36 @@ def repl_exec(frame, source):
 
     # dont save compiled to code as compilation failed. code remains str
 
-    exec(compiled_code, frame.f_globals, frame.f_locals)
+    # modified_locals = frame.f_locals.copy()  # Avoids propagating modification
+    # modified_locals["__line__"] = frame.f_lineno
+    # modified_locals["__event__"] = event
 
+    # local_namespace = frame.f_locals.copy()
+    # global_namespace = frame.f_globals.copy()
+    # exec(compiled_code, global_namespace, local_namespace)
+    # frame.f_locals.update(local_namespace)
+    # frame.f_globals.update(global_namespace)
+
+    # locals = ctypes.pythonapi.PyObject_GetAttrString(frame, "f_locals")
+    # print(locals)
+
+    # THIS CHANGE MUST OCCUR BEFORE EXEC. THIS __LINE__ CHANGE.
+    # EXEC MAKES IT PROPAGATE.
+
+    exec(compiled_code, frame.f_globals, frame.f_locals)
     # This c lvel calls allows use to arbitarily change the variables in the
     # frame including introducing new ones.
     # todo: dokumentoi magic constant c_int 1
     # the magic value 1 tells the function to clear local variables so that
     # the changes are found when referring to variable as x instead of only
     # frame.x
-    c_frame = ctypes.py_object(frame)
-    c_int1 = ctypes.c_int(1)
-    ctypes.pythonapi.PyFrame_LocalsToFast(c_frame, c_int1)
+
+    # this might not be needed since we are in trace func?
+    # c_frame = ctypes.py_object(frame)
+    # c_int1 = ctypes.c_int(1)
+    # ctypes.pythonapi.PyFrame_LocalsToFast(c_frame, c_int1)
+    # 1 stands for the ability to propagate removal of values
+    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
 
 
 def repl_print():
@@ -158,17 +177,32 @@ def repl_loop(frame, event, arg):
     # Unhandled exception happened in orginal source code
     # guard tracing into error handling mechanism
     # stop tracing on exception. there is no use in tracing the internal error handling logic.
+    # THIS MIGHT NOT BE NEEDED AFTER ALL???
     if hasattr(sys, "last_traceback"):
         frame.f_trace = None
         sys.settrace(None)
         return
 
+    # make event and line always available
+
     while True:
         current_frame = escape_frame(frame)  # Escape frame based on settings.
 
+        # inject useful variables to the frame. this change should propagate
+        # since we are in trace function. and running 3.12.
+        current_frame.f_locals["__line__"] = current_frame.f_lineno
+        current_frame.f_locals["__event__"] = event
+
         status_bar(current_frame, event, arg)  # Print bar based on settings.
 
-        user_input = repl_input(current_frame)
+        if should_auto_step(frame, event):  # This ignores escape level
+            # status bar updates will override each other.
+            return repl_loop
+        elif inp := should_simulate_user_input():
+            user_input = inp
+            # print(PS1, user_input)
+        else:
+            user_input = repl_input(current_frame)
 
         should_step = bang_handler(user_input, current_frame, event, arg)
         if should_step == "step-with-repl":  # step source, reopen repl
@@ -193,6 +227,64 @@ def repl_loop(frame, event, arg):
         # loop
 
 
+def escape_frame(frame):
+    """Escapes n frames up if required by settings"""
+    # original_frame = frame
+    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
+        if frame.f_back is None:  # Check if end of stack reached
+            # frame = original_frame
+            CURRENT_SETTINGS["callstack_escape_level"] -= 1
+            print(
+                "Callstack was too short for new escape level. Decrementing"
+                " level by one. Level is now"
+                f" {CURRENT_SETTINGS['callstack_escape_level']}."
+            )
+            # break
+        else:
+            frame = frame.f_back
+    return frame
+
+
+def should_auto_step(frame, event):
+    """Automatically steps if current settings have an expression to check
+
+    __line__ can be used to access current line number in this bang
+    """
+    user_expression = CURRENT_SETTINGS["step_until_expression"]
+    if user_expression is None:  # no need to step. no expression set.
+        return False
+    try:
+        # modified_locals = frame.f_locals.copy()  # Avoids propagating modification
+        # modified_locals["__line__"] = frame.f_lineno
+        # modified_locals["__event__"] = event
+
+        result = bool(eval(user_expression, frame.f_globals, frame.f_locals))
+    except NameError:  # ignore name errors, keep stepping.
+        return True
+    except Exception as e:
+        print(
+            "Conditional step failed with unexpected error:"
+            f" {str(e)}. Clearing the expression."
+        )
+        CURRENT_SETTINGS["step_until_expression"] = None
+        return False
+    else:
+        if result:
+            return False  # can stop stepping
+        else:
+            return True
+
+
+def should_simulate_user_input():
+    """Returns empty string for false. Non empty string if should
+    simulate."""
+    if CURRENT_SETTINGS["echo_count"] > 0:
+        CURRENT_SETTINGS["echo_count"] -= 1
+        return CURRENT_SETTINGS["previous_bang"]
+    else:
+        return ""
+
+
 def prompt():
     """
     the name might be confusing . this function is not the prompt itself but
@@ -214,6 +306,9 @@ def prompt():
         print("Type '!help' for help menu. See status bar at the top for info.")
         sys.settrace(repl_loop)  # Tracing would start on next traceable event.
         sys._getframe(1).f_trace = repl_loop  # Start tracing now instead.
+
+        CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)  # reset settings on restart.
+
     elif trace is not repl_loop:
         msg = (
             "Trace function was already set by some other tool. Use"
@@ -222,21 +317,3 @@ def prompt():
         raise RuntimeError(msg)
     else:
         pass  # seapie already tracing
-
-
-def escape_frame(frame):
-    """Escapes n frames up if required by settings"""
-    # original_frame = frame
-    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
-        if frame.f_back is None:  # Check if end of stack reached
-            # frame = original_frame
-            CURRENT_SETTINGS["callstack_escape_level"] -= 1
-            print(
-                "Callstack was too short for new escape level. Decrementing"
-                " level by one. Level is now"
-                f" {CURRENT_SETTINGS['callstack_escape_level']}."
-            )
-            # break
-        else:
-            frame = frame.f_back
-    return frame

@@ -22,12 +22,19 @@ def bang_handler(user_input, frame, event, arg):
     * continue-in-repl; repl loop should "continue" in while and read new input
     * step-without-repl
 
+    input is case sensitive because !condition has to be case sensitive
     """
+    original_input = user_input  # needed as arg for bangs that take args
     user_input = user_input.lower()
-    if user_input in ("!e", "!exit"):
+
+    if original_input.startswith("!"):  # save the bang
+        if user_input.startswith("!e") or user_input.startswith("!echo"):
+            pass  # echo bang is not saved to avoid infinite loop
+        else:
+            CURRENT_SETTINGS["previous_bang"] = original_input
+
+    if user_input in ("!q", "!quit"):
         exit()  # raises system exit that takes a moment to propagate and cleanup
-    elif user_input in ("!q", "!quit"):
-        os._exit(1)  # exit ungracefully right now.
     elif user_input in ("!s", "!step"):
         return "step-with-repl"
     elif user_input in ("!r", "!run"):
@@ -50,22 +57,34 @@ def bang_handler(user_input, frame, event, arg):
     elif user_input in ("!w", "!where"):
         print_source_lines(frame)
         return "continue-in-repl"
-    elif user_input.startswith("!g") or user_input.startswith("!goto"):
-        # must use startswith since argument is expected
-        do_goto(frame, user_input)
-        return "continue-in-repl"
     elif user_input in ("!u", "!up"):
         up()
         return "continue-in-repl"
     elif user_input in ("!d", "!down"):
         down()
         return "continue-in-repl"
+    elif user_input in ("!f", "!frame"):
+        add_frame(frame)
+        return "continue-in-repl"
+
+    elif user_input.startswith("!g") or user_input.startswith("!goto"):
+        # must use startswith since argument is expected
+        do_goto(frame, original_input)
+        return "continue-in-repl"
+    elif user_input.startswith("!c") or user_input.startswith("!condition"):
+        returnvalue = step_condition(original_input)
+        return returnvalue
+    elif user_input.startswith("!e") or user_input.startswith("!echo"):
+        echo_previous(original_input)
+        return "continue-in-repl"
+
     else:
-        if user_input.startswith("!"):  # got an invalid bang
-            print(f"Invalid bang {user_input}")
+        # got a bang that doesnt match anything known
+        if original_input.startswith("!"):
+            print(f"Invalid bang {repr(original_input)}")
             return "continue-in-repl"
         else:  # got code
-            return
+            pass
 
 
 def print_tb(frame, num_frames_to_hide):
@@ -117,7 +136,10 @@ def print_tb(frame, num_frames_to_hide):
 
 
 def print_source_lines(frame):
-    """Reponds to term size"""
+    """Reponds to term size
+
+    it might be possible to make this fail?
+    """
     try:
         width = os.get_terminal_size().columns
     except OSError:
@@ -155,6 +177,45 @@ def print_source_lines(frame):
             print(out)
 
 
+def up():
+    CURRENT_SETTINGS["callstack_escape_level"] += 1
+    print(
+        "Setting escape level to"
+        f" {CURRENT_SETTINGS['callstack_escape_level']}."
+        " Check status bar for current frame of this prompt."
+    )
+
+
+def down():
+    if CURRENT_SETTINGS["callstack_escape_level"] <= 0:
+        CURRENT_SETTINGS["callstack_escape_level"] = 0
+        print("Can't do deeper in callstack. Resetting escape level to 0.")
+    else:
+        CURRENT_SETTINGS["callstack_escape_level"] -= 1
+        print(
+            "Setting escape level to"
+            f" {CURRENT_SETTINGS['callstack_escape_level']}."
+            " Check status bar for current frame of this prompt."
+        )
+
+
+def add_frame(frame):
+    """Add reference to base frame globals. The frame added is the one
+    currently operated on by interpeter."""
+    frame_to_add = frame
+    global_frame = frame
+    while global_frame.f_back is not None:
+        global_frame = global_frame.f_back
+    module_globals = global_frame.f_globals
+    module_globals["FRAME"] = frame_to_add
+    print(
+        "Added global variable 'FRAME' to root frame. The FRAME refers to"
+        f" {repr(frame.f_code.co_name)} frame {repr(frame)}. Remember to"
+        " delete the reference with 'del FRAME' to avoid circular references"
+        " or memory leaks when you are done with the frame."
+    )
+
+
 def do_goto(frame, user_input):
     """Wohoo. goto in python."""
     command_parts = user_input.split(" ")
@@ -182,26 +243,73 @@ def do_goto(frame, user_input):
         return
 
 
-def up():
-    CURRENT_SETTINGS["callstack_escape_level"] += 1
-    print(
-        "Setting escape level to"
-        f" {CURRENT_SETTINGS['callstack_escape_level']}."
-        " Check status bar for current frame of this prompt."
-    )
+def step_condition(user_input):
+    command_parts = user_input.split(" ", 1)
+    if command_parts[0] not in ("!c", "!condition"):
+        print(f"Invalid bang {user_input}")
+        return "continue-in-repl"
+    if len(command_parts) == 2:
+        user_expression = command_parts[1]
+        # print(
+        #    f"Stepping until bool(eval({repr(user_expression)}, frame.f_globals, frame.f_locals)) is True in"
+        #    " active frame (escape level is ignored). All NameErrors are"
+        #    " ignored so this can hang your terminal."
+        #    " Continue?"
+        # )
+        # choice = input("(Y/n): ")
+        # if choice == "Y":
 
+        try:
+            res = bool(eval(user_expression))
+        except SyntaxError:
+            print("SyntaxError. Ignoring the step condition.")
+            return "continue-in-repl"
+        except Exception:  # Ignore all other errors. We only warn for syntax error.
+            pass
 
-def down():
-    if CURRENT_SETTINGS["callstack_escape_level"] <= 0:
-        CURRENT_SETTINGS["callstack_escape_level"] = 0
-        print("Can't do deeper in callstack. Resetting escape level to 0.")
-    else:
-        CURRENT_SETTINGS["callstack_escape_level"] -= 1
+        CURRENT_SETTINGS["step_until_expression"] = user_expression
         print(
-            "Setting escape level to"
-            f" {CURRENT_SETTINGS['callstack_escape_level']}."
-            " Check status bar for current frame of this prompt."
+            f"Stepping until 'bool(eval({repr(user_expression)}))' is True in active frame. Escape level is ignored."
         )
+        return "step-with-repl"
+        # else:
+        #    print("cancelling")
+        #    return "continue-in-repl"
+
+        # try:
+        #     res = bool(eval(user_expression, frame.f_globals, frame.f_locals))
+        # except SyntaxError:
+        #     print("SyntaxError. Ignoring the expression.")
+        # except Exception:  # Ignore all other errors. Code will just keep running.
+        #     pass
+        # else:
+        #     if res:
+        #         print("true")
+        #     else:
+        #         print("false")
+    else:
+        print("Invalid bang. Use: !c x==0 or !condition x==0")
+        return "continue-in-repl"
+
+
+def echo_previous(user_input):
+    command_parts = user_input.split(" ")
+    if command_parts[0] not in ("!e", "!echo"):
+        print(f"Invalid bang {user_input}")
+        return
+    if len(command_parts) == 2:
+        echo_count_str = command_parts[1]
+        if echo_count_str.isdigit():
+            echo_count = int(echo_count_str)
+        else:
+            print("Invalid echo count. Use: !e 3 or !echo 3")
+            return
+    else:
+        print("Invalid bang. Use: !e 3 or !echo 3")
+        return
+
+    CURRENT_SETTINGS["echo_count"] = echo_count
+    print("Repeating previous bang", echo_count, "times.")
 
 
 def print_help():

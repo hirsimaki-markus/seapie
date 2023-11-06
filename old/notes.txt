@@ -256,15 +256,14 @@ testaa saako tracetettua itsensä. jos saa niin
 
 
 
-!(f)rame              antaa referenssin frameen jota debugataan nyt. tai ehkä alin frame. frame globaaliin. ehkä id() mukaan mutta ei oo sama ku reprissä. meh. ja muistutus että del frame.
-!(p)ickle <object>    pickle
 
-!next !return !call   steppaa seuraavaan x asti?
-!condition korvaamaan until?
-!step
-!step* 10
-!step# 10
-!step? <expression>
+!(p)ickle <object>    pickle
+!(h)istroy stai snippet mutta vaatii custom inputin.
+
+
+
+
+varoita että until ajaa evalia monesti ja voi aiheuttaa virheitä jos yrität
 
 step tai until tms ottamaan filename arg?
 
@@ -284,3 +283,25 @@ known issues: defining recursive functions only works in the global scope in the
 
 dokumentoi että voit steppaa eri framessa kuin missä interpreter on. teet sillä sitten muutoksia mitä
 et näe ennenkuin mene sinne alimpaan frameen.
+
+dokumentoi minne kaikkialle että:? __line__ can be used to access current line number in this bang
+sama myös eventille. se on event tai line exception tai return
+
+mahdollisuus pinnata where????? tai ehkä näyttää aina seuraava rivi tekstinä?
+
+
+dokumentoi että __line__ ja __event__ on aina saatavilla lokaalina muuttujana ja toimii
+myös kun annat !condition esim !c __line__ >= 100 tai !c __event__ == "return"
+
+estä steppaaminen jos escape level ei ole 0
+
+
+
+minimi version on missä tul walrus
+
+
+hyvä tippi: !s ja sit !e 10 niin steppaa 10. toimis myös !c komennolle. tai jos pitää liikkua !up tai !down paljon.
+tää auttaa jokaiseen bangiin mikä muuttaa tilaa.
+tippi: !b ja !b uudestaan piirtää palkin uudestaan jos kaipaa sitä.
+
+mahdollista prodin monkey patch remote debuggauksella?

@@ -93,9 +93,10 @@ def main():
     #    print("got:", repr(tools.read_one_interpreter_input()))
 
     def lol():
-        kissa = "kissa"
-        x = "x"
-        print(x)
+        for i in range(2):
+            kissa = "kissa"
+            x = "x"
+            print(x)
         return "nice"
 
     seapie.prompt()
@@ -103,7 +104,8 @@ def main():
     x = 1
     y = 2
     z = 3
-
+    # print(locals()["z"])
+    print(z)
     lol()
 
     importmonkey.add_path()
