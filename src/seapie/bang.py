@@ -55,9 +55,11 @@ def bang_handler(user_input, frame, event, arg):
         do_goto(frame, user_input)
         return "continue-in-repl"
     elif user_input in ("!u", "!up"):
-        CURRENT_SETTINGS["callstack_escape_level"] += 1
+        up()
+        return "continue-in-repl"
     elif user_input in ("!d", "!down"):
-        CURRENT_SETTINGS["callstack_escape_level"] -= 1
+        down()
+        return "continue-in-repl"
     else:
         if user_input.startswith("!"):  # got an invalid bang
             print(f"Invalid bang {user_input}")
@@ -178,6 +180,28 @@ def do_goto(frame, user_input):
     else:
         print("Goto succeeded. Next line to execute is", line_number)
         return
+
+
+def up():
+    CURRENT_SETTINGS["callstack_escape_level"] += 1
+    print(
+        "Setting escape level to"
+        f" {CURRENT_SETTINGS['callstack_escape_level']}."
+        " Check status bar for current frame of this prompt."
+    )
+
+
+def down():
+    if CURRENT_SETTINGS["callstack_escape_level"] <= 0:
+        CURRENT_SETTINGS["callstack_escape_level"] = 0
+        print("Can't do deeper in callstack. Resetting escape level to 0.")
+    else:
+        CURRENT_SETTINGS["callstack_escape_level"] -= 1
+        print(
+            "Setting escape level to"
+            f" {CURRENT_SETTINGS['callstack_escape_level']}."
+            " Check status bar for current frame of this prompt."
+        )
 
 
 def print_help():

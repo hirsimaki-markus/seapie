@@ -258,7 +258,6 @@ testaa saako tracetettua itsensä. jos saa niin
 
 !(f)rame              antaa referenssin frameen jota debugataan nyt. tai ehkä alin frame. frame globaaliin. ehkä id() mukaan mutta ei oo sama ku reprissä. meh. ja muistutus että del frame.
 !(p)ickle <object>    pickle
-!(c)allstack <n>      n frame.f_back tasoa ylös. vai onko tähä !up ja !down niinku pdb?
 
 !next !return !call   steppaa seuraavaan x asti?
 !condition korvaamaan until?
@@ -275,4 +274,13 @@ tee sittenkin oma input koska historia?
 
 
 
-joskus tulevaisuudessa tai jätä ehkä todo: ! ja !! ja !!!        mitä nää tekee? ehkä sama kuin ipython _ ja __ ja ___ ?
+joskus tulevaisuudessa tai jätä ehkä todo: ! ja !! ja !!!        mitä nää tekee? ehkä sama kuin ipython _ ja __ ja ___ ?'
+
+
+
+
+known issues: defining recursive functions only works in the global scope in the interpeter
+
+
+dokumentoi että voit steppaa eri framessa kuin missä interpreter on. teet sillä sitten muutoksia mitä
+et näe ennenkuin mene sinne alimpaan frameen.

@@ -104,14 +104,11 @@ def main():
     y = 2
     z = 3
 
-    try:
-        raise ZeroDivisionError
-    except:
-        pass
-    seapie.prompt()
+    lol()
 
     importmonkey.add_path()
 
 
 if __name__ == "__main__":
     main()
+    exit()

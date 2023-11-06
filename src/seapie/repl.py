@@ -5,7 +5,7 @@ import codeop
 import ctypes
 import sys
 from .version import seapie_ver
-from .status import print_status_bar, get_status
+from .status import status_bar, get_status
 from .bang import bang_handler, print_tb
 from .settings import CURRENT_SETTINGS
 
@@ -163,40 +163,30 @@ def repl_loop(frame, event, arg):
         sys.settrace(None)
         return
 
-    # Escape to frame according to settings
-    original_frame = frame
-    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
-        if frame.f_back is None:  # Check if end of stack reached
-            print("Callstack too short for escape level. Using default frame.")
-            frame = original_frame
-            break
-        else:
-            frame = frame.f_back
-
     while True:
-        # status
-        if CURRENT_SETTINGS["show_bar"]:
-            print_status_bar(get_status(frame, event, arg))
+        current_frame = escape_frame(frame)  # Escape frame based on settings.
 
-        # read
+        status_bar(current_frame, event, arg)  # Print bar based on settings.
 
-        user_input = repl_input(frame)
+        user_input = repl_input(current_frame)
 
-        next_action = bang_handler(user_input, frame, event, arg)
-        if next_action == "step-with-repl":  # step source, reopen repl
+        should_step = bang_handler(user_input, current_frame, event, arg)
+        if should_step == "step-with-repl":  # step source, reopen repl
             return repl_loop
-        elif next_action == "step-without-repl":  # step source, disabe trace
+        elif should_step == "step-without-repl":  # step source, disabe trace
             return None
-        elif next_action == "continue-in-repl":  # don't step, continue this repl
+        elif should_step == "continue-in-repl":  # don't step, continue this repl
             continue
         else:
             # got code.
             try:
-                repl_exec(frame, user_input)
+                repl_exec(current_frame, user_input)
             except SystemExit:  # Separate exit before catching base exception.
                 exit()
             except BaseException:
-                print_tb(frame, num_frames_to_hide=3)  # Seapie occupies 3 frames here.
+                print_tb(
+                    current_frame, num_frames_to_hide=3
+                )  # Seapie occupies 3 frames here.
                 # the frames are repl-loop, repl-exec, <string> from exec()
                 continue
 
@@ -232,3 +222,21 @@ def prompt():
         raise RuntimeError(msg)
     else:
         pass  # seapie already tracing
+
+
+def escape_frame(frame):
+    """Escapes n frames up if required by settings"""
+    # original_frame = frame
+    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
+        if frame.f_back is None:  # Check if end of stack reached
+            # frame = original_frame
+            CURRENT_SETTINGS["callstack_escape_level"] -= 1
+            print(
+                "Callstack was too short for new escape level. Decrementing"
+                " level by one. Level is now"
+                f" {CURRENT_SETTINGS['callstack_escape_level']}."
+            )
+            # break
+        else:
+            frame = frame.f_back
+    return frame

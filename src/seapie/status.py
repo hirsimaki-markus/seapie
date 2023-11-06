@@ -2,16 +2,24 @@
 
 import os
 import pathlib
+from .settings import CURRENT_SETTINGS
 
 
-def print_status_bar(status):
+def status_bar(current_frame, event, arg):
     """Uses vt100 coes to print a status bar at the top of the
     terminal. this has the side effect of overwriting history. If getting terminal
     size fails due to file descriptor not being connected to terminal, nothing
     is printed.
 
     if status is longer than terminal width, it gets cut.
+
+    only prints the bar if current settings allow it.
     """
+    if not CURRENT_SETTINGS["show_bar"]:
+        return
+
+    status = get_status(current_frame, event, arg)
+
     try:
         width = os.get_terminal_size().columns
     except OSError:
@@ -39,7 +47,8 @@ def get_status(frame, event, arg):
     # Null check with 'or ""'
     filename = pathlib.Path(frame.f_code.co_filename or "").name
 
-    status = f"{filename}{sep}no. {frame.f_lineno}{sep}{event.upper()}"
+    frame_name = repr(frame.f_code.co_name) or repr("")
+    status = f"file: {filename}{sep}line: {frame.f_lineno}{sep}event: {event.upper()}{sep}frame: {frame_name}"
 
     if event == "call":
         callee_name = frame.f_code.co_name
@@ -54,8 +63,8 @@ def get_status(frame, event, arg):
             caller_name = "None"
         else:
             caller_name = frame.f_back.f_code.co_name
-        retval = f"returning {repr(arg)}"
+        retval = f"returning: {repr(arg)}"
         status = f"{status}{sep}{caller_name} ← {callee_name}" f"{sep}{retval}"
     elif event == "exception":
-        status = f"{status}{sep} raising {repr(arg[1])}"
+        status = f"{status}{sep}raising: {repr(arg[1])}"
     return status
