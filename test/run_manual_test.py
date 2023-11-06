@@ -3,7 +3,7 @@
 import importmonkey
 
 
-if __name__ == "__main__":
+def main():
     importmonkey.add_path("../src")
     import seapie
     from seapie import prompt
@@ -26,4 +26,10 @@ if __name__ == "__main__":
     except:
         pass
 
+    seapie.prompt()
+
     importmonkey.add_path()
+
+
+if __name__ == "__main__":
+    main()

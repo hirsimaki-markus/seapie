@@ -6,14 +6,14 @@ import ctypes
 import sys
 from .version import seapie_ver
 from .status import print_status_bar, get_status
-from .bang import print_tb
+from .bang import bang_handler, print_tb
 
 # These can be set to anything
 PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
 PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
 
 
-def repl_input():
+def repl_input(frame):
     """Fake python repl until we can return meaningful code.
     ja voi antaa keybardintteruptin tai eof errorin valua esiin
     tämö funktio lupaa palauttaa jotain, mutta se jokin voi nostaa herjan
@@ -23,9 +23,34 @@ def repl_input():
 
     always returns str, compiling is done later by the receiver.
 
-
+    returned str might cause error when compiling.
 
     uus: can raise: eoferror, kbinterrupt. these mut be caught in repl loop.
+    uusin: this funktin shoul never raise so error handling is easier
+    in the rest of the repl
+
+    the prompt provided will look like one of these:
+
+    1 >>>
+
+
+    2 >>>
+    ...
+    ...
+
+
+    3 >>>
+    KeyboardInterrupt
+    >>>
+
+    4 >>>
+    (exit due to eof)
+
+
+    frame is required as argument to correcly print traceback if needed
+
+    this function prints tracebacks instead of raising to make repl loop
+    cleaner
     """
 
     # Readline is required on systems where it is available to make the input
@@ -38,7 +63,15 @@ def repl_input():
 
     lines = []
     while True:  # read input until it is completed or fails or we get a bang
-        line = input(PS1 if not lines else PS2)
+        try:
+            line = input(PS1 if not lines else PS2)
+        except KeyboardInterrupt:  # ctrl+c
+            print("\nKeyboardInterrupt")
+            lines = []
+            continue
+        except EOFError:  # ctrl+d or ctrl+z
+            print()
+            exit()
 
         if line.startswith("!") and not lines:
             return line
@@ -51,10 +84,16 @@ def repl_input():
         # täytyy olla "string" että sama kuin execillä
         try:
             entry = "\n".join(lines)  # todo: selitä string ja single valinta
+            # string nimi koska exec käyttää samaa
             if codeop.compile_command(entry, "<string>", "single") is not None:
                 return entry
-        except (SyntaxError, ValueError, OverflowError) as e:
-            raise type(e) from None  # todo: onko tää oikein? rereaise none?
+        except (SyntaxError, ValueError, OverflowError):
+            # raise type(e) from None  # todo: onko tää oikein? rereaise none?
+            print_tb(frame, num_frames_to_hide=4)
+            # hiding: repl_input, codeop.compile_command, codeop._maybe_compile, codeop._compile
+            lines = []
+            continue
+            # return entry  # anna tarkoituksella mennä läpi, exec hajoaa
 
 
 def repl_exec(frame, source):
@@ -83,6 +122,7 @@ def repl_exec(frame, source):
 
 
 def repl_print():
+    """Poista tää kaikista importeista myös"""
     pass
 
 
@@ -112,43 +152,30 @@ def repl_loop(frame, event, arg):
         print_status_bar(get_status(frame, event))
 
         # read
-        try:
-            user_input = repl_input()
-        except KeyboardInterrupt:
-            print()
-            print("KeyboardInterrupt")
-            continue
-        except EOFError:
-            print()
-            exit()
-        except Exception:
-            print()
-            print("Unexpected exception in reading input. Trying to recover.")
-            continue
 
-        # evaluate
-        if user_input == "!s":
-            break
-        if user_input == "!q":
-            exit()
+        user_input = repl_input(frame)
+
+        next_action = bang_handler(user_input, frame)
+        if next_action == "step-with-repl":  # step source, reopen repl
+            return repl_loop
+        elif next_action == "step-without-repl":  # step source, disabe trace
+            return None
+        elif next_action == "continue-in-repl":  # don't step, continue this repl
+            continue
+        else:
+            pass  # got code
 
         # evaluate
         try:
             repl_exec(frame, user_input)
         except SystemExit:  # Separate exit before catching base exception.
             exit()
-        except MemoryError:
-            print()
-            print("Call to exec() ran out of memory. Trying to recover.")
-            continue
         except BaseException:
-            # Seapie will occupy 2 frames when error happens here
-            print_tb(num_frames_to_hide=2)
+            print_tb(frame, num_frames_to_hide=3)  # Seapie occupies 3 frames here.
+            # the frames are repl-loop, repl-exec, <string> from exec()
             continue
 
         # loop
-
-    return repl_loop
 
 
 def prompt():
@@ -166,8 +193,10 @@ def prompt():
             f"{sys.version_info.minor}."
             f"{sys.version_info.micro}"
         )
-        print(f"Seapie {seapie_ver} repl running on Python {pyver} on {sys.platform}")
-        print("""Type "!help" for more information.""")
+        print(
+            f"Stopped on breakpoint. Seapie {seapie_ver} running on Python {pyver} on {sys.platform}."
+        )
+        print("Type '!help' for help menu. See status bar at the top for info.")
         sys.settrace(repl_loop)  # Tracing would start on next traceable event.
         sys._getframe(1).f_trace = repl_loop  # Start tracing now instead.
     elif trace is not repl_loop:
@@ -176,3 +205,5 @@ def prompt():
             " sys.gettrace() or sys.settrace(None) to inspect or clear it."
         )
         raise RuntimeError(msg)
+    else:
+        pass  # seapie already tracing

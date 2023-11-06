@@ -280,3 +280,7 @@ step tai until tms ottamaan filename arg?
 status info funktio leikkaamaan jos ei mahdu terminaaliin
 
 tee sittenkin oma input koska historia?
+
+dokumentoi quit alias
+
+kuuluuko print tb muualle kuin bang handler?
