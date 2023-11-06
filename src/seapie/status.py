@@ -18,7 +18,8 @@ def print_status_bar(status):
         return
 
     # Slice end of message if it wont fit in one line. -1 keeps trailing space
-    status = status[: (width - 1)]
+    # also force leading space
+    status = " " + status[: (width - 1)]
 
     # VT100 control codes required.
     move_to_zero = "\x1b[0;0H"
@@ -32,13 +33,13 @@ def print_status_bar(status):
     print(out, flush=True, end="")
 
 
-def get_status(frame, event):
+def get_status(frame, event, arg):
     """Creates a status string based on a given frame and event(str)"""
     sep = " │ "  # This is not the same symbol as |
     # Null check with 'or ""'
     filename = pathlib.Path(frame.f_code.co_filename or "").name
 
-    status = f" {filename}{sep}no. {frame.f_lineno}{sep}{event.upper()}"
+    status = f"{filename}{sep}no. {frame.f_lineno}{sep}{event.upper()}"
 
     if event == "call":
         callee_name = frame.f_code.co_name
@@ -53,7 +54,8 @@ def get_status(frame, event):
             caller_name = "None"
         else:
             caller_name = frame.f_back.f_code.co_name
-        status = f"{status}{sep}{caller_name} ← {callee_name}"
+        retval = f"returning {repr(arg)}"
+        status = f"{status}{sep}{caller_name} ← {callee_name}" f"{sep}{retval}"
     elif event == "exception":
-        status = f"{status}{sep}{repr(arg[1])}"
+        status = f"{status}{sep} raising {repr(arg[1])}"
     return status

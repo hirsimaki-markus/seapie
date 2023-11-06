@@ -7,15 +7,12 @@ import sys
 from .version import seapie_ver
 from .status import print_status_bar, get_status
 from .bang import bang_handler, print_tb
+from .settings import CURRENT_SETTINGS
+
 
 # These can be set to anything
 PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
 PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
-
-# State that will persist over different calls to prompt().
-# These settings can be modified by anyone anywhere. they are not passed as
-# arguments.
-CURRENT_SETTINGS = {"show_bar": True}
 
 
 def repl_input(frame):
@@ -76,6 +73,20 @@ def repl_input(frame):
             continue
         except EOFError:  # ctrl+d or ctrl+z
             print()
+            exit()
+        except ValueError:
+            # I/O operation on closed file. rarely happens when seapie
+            # prompt is being reopened?
+            print(
+                "\nFailed to read from stdin with input(). Was there another"
+                " breakpoint after try-except in which you called !e or exit()"
+                " during an exception event? If that was the cause, use !q"
+                " instead. "
+            )
+            # one way to cause this is to step into try-except block and
+            # exit() during exception event while there is new breakpoint
+            # below the try-except. exit() takes a moment to propagate. use !q
+            # instead.
             exit()
 
         if line.startswith("!") and not lines:
@@ -154,13 +165,14 @@ def repl_loop(frame, event, arg):
 
     while True:
         # status
-        print_status_bar(get_status(frame, event))
+        if CURRENT_SETTINGS["show_bar"]:
+            print_status_bar(get_status(frame, event, arg))
 
         # read
 
         user_input = repl_input(frame)
 
-        next_action = bang_handler(user_input, frame)
+        next_action = bang_handler(user_input, frame, event, arg)
         if next_action == "step-with-repl":  # step source, reopen repl
             return repl_loop
         elif next_action == "step-without-repl":  # step source, disabe trace
@@ -168,17 +180,15 @@ def repl_loop(frame, event, arg):
         elif next_action == "continue-in-repl":  # don't step, continue this repl
             continue
         else:
-            pass  # got code
-
-        # evaluate
-        try:
-            repl_exec(frame, user_input)
-        except SystemExit:  # Separate exit before catching base exception.
-            exit()
-        except BaseException:
-            print_tb(frame, num_frames_to_hide=3)  # Seapie occupies 3 frames here.
-            # the frames are repl-loop, repl-exec, <string> from exec()
-            continue
+            # got code.
+            try:
+                repl_exec(frame, user_input)
+            except SystemExit:  # Separate exit before catching base exception.
+                exit()
+            except BaseException:
+                print_tb(frame, num_frames_to_hide=3)  # Seapie occupies 3 frames here.
+                # the frames are repl-loop, repl-exec, <string> from exec()
+                continue
 
         # loop
 

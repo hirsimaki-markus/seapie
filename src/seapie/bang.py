@@ -1,13 +1,15 @@
 """
-bang handler stuff
+bang handler stuff and related tools
 """
 
+import os
 import sys
 import traceback
-from .repl import CURRENT_SETTINGS
+from .settings import CURRENT_SETTINGS
+from .status import get_status
 
 
-def bang_handler(bang, frame):
+def bang_handler(user_input, frame, event, arg):
     """Attempts to do complete adnlings of bands. returns values only
 
     if the enclosing repl must take an action that cant be done here.
@@ -21,25 +23,39 @@ def bang_handler(bang, frame):
     * step-without-repl
 
     """
-    bang = bang.lower()
-    if bang in ("!e", "!exit", "!q", "!quit"):
-        exit()
-    elif bang in ("!s", "!step"):
+    user_input = user_input.lower()
+    if user_input in ("!e", "!exit"):
+        exit()  # raises system exit that takes a moment to propagate and cleanup
+    elif user_input in ("!q", "!quit"):
+        os._exit(1)  # exit ungracefully right now.
+    elif user_input in ("!s", "!step"):
         return "step-with-repl"
-    elif bang in ("!r", "!run"):
+    elif user_input in ("!r", "!run"):
         frame.f_trace = None
         sys.settrace(None)
         return "step-without-repl"
-    elif bang in ("!t", "!traceback", "!tb"):
+    elif user_input in ("!h", "!help"):
+        print_help()
+        return "continue-in-repl"
+    elif user_input in ("!t", "!traceback", "!tb"):
         print_tb(frame, 0)  # there are no seapie related frames to hide since
         # there is no exception going on.
         return "continue-in-repl"
-    elif bang in ("!b", "!bar"):
+    elif user_input in ("!b", "!bar"):
         CURRENT_SETTINGS["show_bar"] = not CURRENT_SETTINGS["show_bar"]
         return "continue-in-repl"
+    elif user_input in ("!i", "!info"):
+        print(get_status(frame, event, arg))
+        return "continue-in-repl"
+    elif user_input in ("!w", "!where"):
+        print_source_lines(frame)
+        return "continue-in-repl"
+    elif user_input.startswith("!g") or user_input.startswith("!goto"):
+        do_goto(frame, user_input)
+        return "continue-in-repl"
     else:
-        if bang.startswith("!"):  # got an invalid bang
-            print(f"Invalid bang {bang}")
+        if user_input.startswith("!"):  # got an invalid bang
+            print(f"Invalid bang {user_input}")
             return "continue-in-repl"
         else:  # got code
             return
@@ -91,3 +107,73 @@ def print_tb(frame, num_frames_to_hide):
     # Only print the error itself if an exception is being handled
     if exc_type is not None and exc_val is not None:
         print(f"{exc_type.__name__}: {exc_val}")
+
+
+def print_source_lines(frame):
+    """Reponds to term size"""
+    try:
+        width = os.get_terminal_size().columns
+    except OSError:
+        width = 80
+
+    current_lineno = frame.f_lineno
+    filename = frame.f_globals.get("__file__")  # Null check with .get
+
+    if filename is None:
+        print("Unable to retrieve the current filename.")
+        return
+
+    try:
+        with open(filename, "r") as file:
+            lines = file.readlines()
+    except OSError as e:
+        print(f"Error opening file: {e}")
+        return
+
+    invert_color = "\x1b[7m"
+    reset_color = "\x1b[0m"
+
+    max_lineno_width = len(str(len(lines)))
+
+    for lineno, line in enumerate(lines, start=1):
+        line = line[:-1]  # Remove trailing newline with -1
+        line_prefix = "-->" if lineno == current_lineno else "   "
+        linenum = str(lineno).rjust(max_lineno_width)  # right aling lineno
+        if abs(lineno - current_lineno) <= 10:  # show 10 prev and following lines
+            out = f"{invert_color}{linenum}{reset_color} {line_prefix}{line}"
+            # invert color and reset color lenghts are added to width since
+            # they are invisible and dont actually take up space
+            out = out[: width + len(invert_color) + len(reset_color)]
+
+            print(out)
+
+
+def do_goto(frame, user_input):
+    """Wohoo. goto in python."""
+    command_parts = user_input.split(" ")
+    if command_parts[0] not in ("!g", "!goto"):
+        print(f"Invalid bang {user_input}")
+        return
+    if len(command_parts) == 2:
+        line_number_str = command_parts[1]
+        if line_number_str.isdigit():
+            line_number = int(line_number_str)
+        else:
+            print("Invalid line number. Use: !g 123 or !goto 123")
+            return
+    else:
+        print("Invalid bang. Use: !g 123 or !goto 123")
+        return
+
+    try:
+        frame.f_lineno = line_number
+    except Exception as e:
+        print("Goto failed:", str(e))
+        return
+    else:
+        print("Goto succeeded. Next line to execute is", line_number)
+        return
+
+
+def print_help():
+    print("nice")

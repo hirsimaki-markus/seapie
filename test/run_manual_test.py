@@ -2,6 +2,87 @@
 
 import importmonkey
 
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+
 
 def main():
     importmonkey.add_path("../src")
@@ -15,17 +96,18 @@ def main():
         kissa = "kissa"
         x = "x"
         print(x)
+        return "nice"
 
     seapie.prompt()
 
-    asd = 1
-    lol()
+    x = 1
+    y = 2
+    z = 3
 
     try:
-        importmonkey.add_path()
+        raise ZeroDivisionError
     except:
         pass
-
     seapie.prompt()
 
     importmonkey.add_path()
