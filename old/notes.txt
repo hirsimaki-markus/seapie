@@ -236,3 +236,47 @@ itse asiassa sys.monitoring ei toimikkaan tähän tarkoitukseen kun ei saa frame
 mieti mitä kaikea kannattaa paljastaa seapien sisältä. funktiot ei toimi yksin.
 
 kato se vanha readme että onko bugit korjattu mitä listattu
+
+kerro sonjalle seapie
+
+testaa tracettaa for looppiin ja generaattoriin.
+
+salli autoexecute?
+
+bangeille argumenttien validointi
+
+dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa
+vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
+taitaa olla 3 framea.
+
+testaa saako tracetettua itsensä. jos saa niin
+  # if frame.f_code.co_filename == inspect.getfile(
+    #        Trace
+    #    ):
+
+
+! ja !! ja !!!        mitä nää tekee? ehkä sama kuin ipython _ ja __ ja ___ ?
+!(h)elp               this help
+!(p)in                status bar
+!(w)here              printtaa source linejä
+!(f)rame              antaa referenssin frameen jota debugataan nyt. tai ehkä alin frame. frame globaaliin. ehkä id() mukaan mutta ei oo sama ku reprissä. meh. ja muistutus että del frame.
+!(i)info              sama tieto kuin status bar
+!(e)xit               alias !(q)uit. sama kuin exit()
+!(r)un                continue running without tracing
+!(t)raceback          stack trace
+!(p)ickle <object>    pickle
+!(j)ump <lineno>      jump to line (in line event)
+!(c)allstack <n>      n frame.f_back tasoa ylös. vai onko tähä !up ja !down niinku pdb?
+!retval               tms? antamaan se tieto mikä on argissa? vai meneekö aina status baariin?
+!next !return !call   steppaa seuraavaan x asti?
+!condition korvaamaan until?
+!step
+!step* 10
+!step# 10
+!step? <expression>
+
+step tai until tms ottamaan filename arg?
+
+status info funktio leikkaamaan jos ei mahdu terminaaliin
+
+tee sittenkin oma input koska historia?

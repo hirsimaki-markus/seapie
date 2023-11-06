@@ -2,7 +2,7 @@
 
 """Docstring. cpython depdency warning minne kaikkialle"""
 from .version import seapie_ver
-from .repl import repl_input, repl_exec, repl_print, repl_loop, breakpoint
+from .repl import repl_input, repl_exec, repl_print, repl_loop, prompt
 
 
 __version__ = seapie_ver
@@ -14,7 +14,7 @@ __all__ = [
     "repl_exec",  # Part of actual repl.
     "repl_print",  # Part of actual repl.
     "repl_loop",  # Part of actual repl.
-    "breakpoint",  # Breakpoint to trigger repl.
+    "prompt",  # Breakpoint to trigger repl.
     "seapie",  # Backwards compatibility alias.
     "Seapie",  # Backwards compatibility alias.
     "true_exec",  # Backwards compatibility alias.
@@ -23,10 +23,10 @@ __all__ = [
 ]
 
 # Old names for compatibility with version 1.x.x and 2.x.x naming schemes.
-seapie = breakpoint
-Seapie = breakpoint
+seapie = prompt
+Seapie = prompt
 true_exec = repl_exec
 
 # Provide two common aliases for breakpoint.
-brk = breakpoint
-bp = breakpoint
+brk = prompt
+bp = prompt

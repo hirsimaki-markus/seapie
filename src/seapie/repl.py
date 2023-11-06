@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 
+
 import codeop
 import ctypes
 import sys
 from .version import seapie_ver
+from .status import print_status_bar, get_status
+from .bang import print_tb
 
 # These can be set to anything
 PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
 PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
 
 
-def repl_input(pre_ps1, pre_ps2):
+def repl_input():
     """Fake python repl until we can return meaningful code.
     ja voi antaa keybardintteruptin tai eof errorin valua esiin
     tämö funktio lupaa palauttaa jotain, mutta se jokin voi nostaa herjan
@@ -19,6 +22,10 @@ def repl_input(pre_ps1, pre_ps2):
     mutable defaults trickery alert
 
     always returns str, compiling is done later by the receiver.
+
+
+
+    uus: can raise: eoferror, kbinterrupt. these mut be caught in repl loop.
     """
 
     # Readline is required on systems where it is available to make the input
@@ -31,17 +38,7 @@ def repl_input(pre_ps1, pre_ps2):
 
     lines = []
     while True:  # read input until it is completed or fails or we get a bang
-        try:
-            line = input(f"{pre_ps1}{PS1}" if not lines else f"{pre_ps2}{PS2}")
-        except (EOFError, KeyboardInterrupt) as e:
-            # If input causes an error, it likely wont print a newline.
-            # silently print newlie manually to make everything behave like
-            # the normal interpreter and then reraise from None to hide part
-            # of the traceback. it is important that the raising happens in
-            # this module. so that this module can be hidden when printing
-            # traceback later
-            print()
-            raise type(e) from None
+        line = input(PS1 if not lines else PS2)
 
         if line.startswith("!") and not lines:
             return line
@@ -110,68 +107,57 @@ def repl_loop(frame, event, arg):
         sys.settrace(None)
         return
 
-    match event:
-        case "call":  # arg is None.
-            caller_name = frame.f_back.f_code.co_name
-            callee_name = frame.f_code.co_name
-            pre_ps1 = f"call {caller_name} → {callee_name} "
-            pre_ps2 = f"call {caller_name} → {callee_name} "
-        case "line":  # arg is None
-            pre_ps1 = f"line# {frame.f_lineno} "
-            pre_ps2 = f"line# {frame.f_lineno} "
-        case "return":  # arg is the value that will be returned, None if raising.
-            caller_name = frame.f_back.f_code.co_name
-            callee_name = frame.f_code.co_name
-            pre_ps1 = f"return {caller_name} ← {callee_name} "
-            pre_ps2 = f"return {caller_name} ← {callee_name} "
-            # switch = f"returning {object.__repr__(arg)}."
-        case "exception":  # arg is (exception, value, traceback
-            pre_ps1 = "error "
-            pre_ps2 = "error "
-            print(arg)
-            # switch = f"raising {arg[0].__name__}."
-        case _:
-            pre_ps1 = "unknown "
-            pre_ps2 = "unknown "
-
-    pre_ps1 = pre_ps1.ljust(20)
-    pre_ps2 = pre_ps2.ljust(20)
-
-    # sys.stdout.write("\033[s")  # Save the current cursor position
-    # sys.stdout.write(f"\033[{0};{0}H")  # Move the cursor to position
-
-    sys.stdout.write("\033[7m")  # Set the text to inverted mode
-    # Print text with inverted colors
-    print()
-    print("Inverted Text")
-    sys.stdout.write("\033[0m")  # Reset to default text attributes
-
-    sys.stdout.write("\033[A")
-    sys.stdout.write("\033[A")
-
-    # sys.stdout.write("\033[u")
-
-    # print(
-    #    f"Next: line {frame.f_lineno} in {frame.f_code.co_name} at "
-    #    f"{os.path.basename((frame.f_code.co_filename))}, {switch}"
-    #    )
-
     while True:
-        user_input = repl_input(pre_ps1, pre_ps2)
+        # status
+        print_status_bar(get_status(frame, event))
+
+        # read
+        try:
+            user_input = repl_input()
+        except KeyboardInterrupt:
+            print()
+            print("KeyboardInterrupt")
+            continue
+        except EOFError:
+            print()
+            exit()
+        except Exception:
+            print()
+            print("Unexpected exception in reading input. Trying to recover.")
+            continue
+
+        # evaluate
         if user_input == "!s":
             break
         if user_input == "!q":
-            sys.stdout.write("\033[?1049h")  # alternate buffer
-            sys.stdout.write("\033[?1049l")  # leave alternate buffer
             exit()
 
-        repl_exec(frame, user_input)
+        # evaluate
+        try:
+            repl_exec(frame, user_input)
+        except SystemExit:  # Separate exit before catching base exception.
+            exit()
+        except MemoryError:
+            print()
+            print("Call to exec() ran out of memory. Trying to recover.")
+            continue
+        except BaseException:
+            # Seapie will occupy 2 frames when error happens here
+            print_tb(num_frames_to_hide=2)
+            continue
+
+        # loop
 
     return repl_loop
 
 
-def breakpoint():
-    """starts traving if trace func is none. if trace func is repl_llop
+def prompt():
+    """
+    the name might be confusing . this function is not the prompt itself but
+    sets the system trace function >repl_loop< which acts like the prompt when
+    set as the trace function.
+
+    starts traving if trace func is none. if trace func is repl_llop
     this call does nothing. if trace func is something else raise.
     """
     if (trace := sys.gettrace()) is None:
@@ -180,16 +166,8 @@ def breakpoint():
             f"{sys.version_info.minor}."
             f"{sys.version_info.micro}"
         )
-
-        print()
         print(f"Seapie {seapie_ver} repl running on Python {pyver} on {sys.platform}")
         print("""Type "!help" for more information.""")
-        print()
-        print("Current event being traced is shown here")
-        print("  |")
-        print("  |")
-        print("  V")
-
         sys.settrace(repl_loop)  # Tracing would start on next traceable event.
         sys._getframe(1).f_trace = repl_loop  # Start tracing now instead.
     elif trace is not repl_loop:
@@ -198,5 +176,3 @@ def breakpoint():
             " sys.gettrace() or sys.settrace(None) to inspect or clear it."
         )
         raise RuntimeError(msg)
-    else:
-        pass  # Seapie was already tracing.

@@ -1,5 +1,6 @@
-"""
-Updating __version__ information:
+#!/usr/bin/env python3
+
+"""Updating __version__ information:
     * Format is <major>.<minor>.<patch>
     * Never use leading or trailing zeroes in any of major/minor/patch.
     * A lone zero is allowed.
