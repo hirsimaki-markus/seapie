@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# flake8: noqa
+
+
 # verified for 3.10. python saw significant changes to how interpreter parsing and lexing etc works between [seapie 2 patch date] release and 3.10 https://github.com/python/cpython/issues/90679
 
 import os

@@ -2,10 +2,16 @@
 
 
 import codeop
-import ctypes
 import sys
 from .version import seapie_ver
-from .status import status_bar, get_status
+from .status import status_bar
+from .helpers import (
+    escape_frame,
+    should_auto_step,
+    should_simulate_user_input,
+    init_seapie_directory,
+    check_rw_access,
+)
 from .bang import bang_handler, print_tb
 from .settings import CURRENT_SETTINGS, __DEFAULT_SETTINGS__
 
@@ -190,12 +196,16 @@ def repl_loop(frame, event, arg):
 
         # inject useful variables to the frame. this change should propagate
         # since we are in trace function. and running 3.12.
+        # this must happen before exec (i think)
+        # otherwise we would need
+        # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
+        # maybe. or it works because we are in the trace function.
         current_frame.f_locals["__line__"] = current_frame.f_lineno
         current_frame.f_locals["__event__"] = event
 
         status_bar(current_frame, event, arg)  # Print bar based on settings.
 
-        if should_auto_step(frame, event):  # This ignores escape level
+        if should_auto_step(frame):  # This ignores escape level
             # status bar updates will override each other.
             return repl_loop
         elif inp := should_simulate_user_input():
@@ -227,64 +237,6 @@ def repl_loop(frame, event, arg):
         # loop
 
 
-def escape_frame(frame):
-    """Escapes n frames up if required by settings"""
-    # original_frame = frame
-    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
-        if frame.f_back is None:  # Check if end of stack reached
-            # frame = original_frame
-            CURRENT_SETTINGS["callstack_escape_level"] -= 1
-            print(
-                "Callstack was too short for new escape level. Decrementing"
-                " level by one. Level is now"
-                f" {CURRENT_SETTINGS['callstack_escape_level']}."
-            )
-            # break
-        else:
-            frame = frame.f_back
-    return frame
-
-
-def should_auto_step(frame, event):
-    """Automatically steps if current settings have an expression to check
-
-    __line__ can be used to access current line number in this bang
-    """
-    user_expression = CURRENT_SETTINGS["step_until_expression"]
-    if user_expression is None:  # no need to step. no expression set.
-        return False
-    try:
-        # modified_locals = frame.f_locals.copy()  # Avoids propagating modification
-        # modified_locals["__line__"] = frame.f_lineno
-        # modified_locals["__event__"] = event
-
-        result = bool(eval(user_expression, frame.f_globals, frame.f_locals))
-    except NameError:  # ignore name errors, keep stepping.
-        return True
-    except Exception as e:
-        print(
-            "Conditional step failed with unexpected error:"
-            f" {str(e)}. Clearing the expression."
-        )
-        CURRENT_SETTINGS["step_until_expression"] = None
-        return False
-    else:
-        if result:
-            return False  # can stop stepping
-        else:
-            return True
-
-
-def should_simulate_user_input():
-    """Returns empty string for false. Non empty string if should
-    simulate."""
-    if CURRENT_SETTINGS["echo_count"] > 0:
-        CURRENT_SETTINGS["echo_count"] -= 1
-        return CURRENT_SETTINGS["previous_bang"]
-    else:
-        return ""
-
-
 def prompt():
     """
     the name might be confusing . this function is not the prompt itself but
@@ -304,10 +256,11 @@ def prompt():
             f"Stopped on breakpoint. Seapie {seapie_ver} running on Python {pyver} on {sys.platform}."
         )
         print("Type '!help' for help menu. See status bar at the top for info.")
+        CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)  # reset settings on restart.
+        init_seapie_directory()
+        check_rw_access()
         sys.settrace(repl_loop)  # Tracing would start on next traceable event.
         sys._getframe(1).f_trace = repl_loop  # Start tracing now instead.
-
-        CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)  # reset settings on restart.
 
     elif trace is not repl_loop:
         msg = (

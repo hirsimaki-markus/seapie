@@ -68,3 +68,37 @@ def get_status(frame, event, arg):
     elif event == "exception":
         status = f"{status}{sep}raising: {repr(arg[1])}"
     return status
+
+
+def print_pickles():
+    pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
+    width = os.get_terminal_size().columns  # get term size
+
+    # Load all file names into a list and sort by length
+    filenames = sorted(os.listdir(pickles_dir), key=len, reverse=True)
+
+    pad_size = len(max(filenames, key=len)) + 1
+
+    filenames = [i.ljust(pad_size) for i in filenames]
+
+    # No need for fancy logic; stuff wont fit anyways.
+    if len(filenames[0]) >= width:
+        filenames.reverse()
+        for file in filenames:
+            print(file)
+        return
+    else:  # attempt to fit more names per line
+        line_accum = []
+        while filenames:
+            filename = filenames.pop()
+            line_accum.append(filename)
+
+            if len("".join(line_accum)) < width:
+                if filenames == []:  # reached last item, just print it
+                    print("".join(line_accum))
+                else:
+                    continue  # Keep adding more until line wont fit
+            else:
+                filenames.append(line_accum.pop())  # Undo the newest adding
+                print("".join(line_accum))
+                line_accum = []

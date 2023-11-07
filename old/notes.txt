@@ -1,14 +1,3 @@
-from seapie import prompt
-from seapie import remote_prompt
-
-
-prompt()
-remote_prompt(secret="wololoo :D", mode="host/client")
-
-
-"""
-normal debugging: use prompt.
-remote debugging: deploy breakpoint to somewhere
 
 
 
@@ -66,19 +55,6 @@ killer feature on remote debugging ja bugfixit.
 historia kysymykseen vastataan tarjomalla tapa tallentaa snippettejä.
 ne kijoitetaan johonkin .seapie fileen ~ tai $HOME$ alle. varmaan joku
 "currentuser" sijainti löytyy. !!os.path.expanduser("~")!!
-
-
-
-
-
-yapdb
-
-historian kelaamiselle oma komento kun hotkeyt ei voi toimia. snippettien lisäksi.
-
-"""
-
-
-
 
 
 
@@ -302,6 +278,6 @@ minimi version on missä tul walrus
 
 hyvä tippi: !s ja sit !e 10 niin steppaa 10. toimis myös !c komennolle. tai jos pitää liikkua !up tai !down paljon.
 tää auttaa jokaiseen bangiin mikä muuttaa tilaa.
-tippi: !b ja !b uudestaan piirtää palkin uudestaan jos kaipaa sitä.
+
 
 mahdollista prodin monkey patch remote debuggauksella?

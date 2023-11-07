@@ -5,8 +5,10 @@ bang handler stuff and related tools
 import os
 import sys
 import traceback
+import pickle
 from .settings import CURRENT_SETTINGS
 from .status import get_status
+from .status import print_pickles
 
 
 def bang_handler(user_input, frame, event, arg):
@@ -34,7 +36,7 @@ def bang_handler(user_input, frame, event, arg):
             CURRENT_SETTINGS["previous_bang"] = original_input
 
     if user_input in ("!q", "!quit"):
-        exit()  # raises system exit that takes a moment to propagate and cleanup
+        exit()
     elif user_input in ("!s", "!step"):
         return "step-with-repl"
     elif user_input in ("!r", "!run"):
@@ -74,6 +76,12 @@ def bang_handler(user_input, frame, event, arg):
     elif user_input.startswith("!c") or user_input.startswith("!condition"):
         returnvalue = step_condition(original_input)
         return returnvalue
+    elif user_input.startswith("!p") or user_input.startswith("!pickle"):
+        pickle_object(frame, original_input)
+        return "continue-in-repl"
+    elif user_input.startswith("!l") or user_input.startswith("!load"):
+        unpickle_object(frame, original_input)
+        return "continue-in-repl"
     elif user_input.startswith("!e") or user_input.startswith("!echo"):
         echo_previous(original_input)
         return "continue-in-repl"
@@ -109,7 +117,6 @@ def print_tb(frame, num_frames_to_hide):
     # tb_frames = traceback.extract_stack()
 
     traceback_exc = traceback.TracebackException(*sys.exc_info())
-    # tämä lupaa piilottaa kaiken tästä moduulista, eli mikään mitä täältä moduulista kutsutaan ei saa nostaa itse herjaa tai se tulee näkyville!
 
     # seapie would be present here so we hide it from the middle of the stack
     # Exclude the frames occupied by the debugger
@@ -119,7 +126,8 @@ def print_tb(frame, num_frames_to_hide):
     # else:
     tb_exc_stack_filtered = traceback_exc.stack[num_frames_to_hide:]
 
-    # we have to use both traceback.extract_stack(frame) and traceback_exc.stack
+    # we have to use both traceback.extract_stack(frame) and
+    # traceback_exc.stack
     # because otherwise frames created in seapie repl would not be visible
     # or frames created in original source would not be visible
     tb_frames = traceback.extract_stack(frame) + tb_exc_stack_filtered
@@ -168,7 +176,7 @@ def print_source_lines(frame):
         line = line[:-1]  # Remove trailing newline with -1
         line_prefix = "-->" if lineno == current_lineno else "   "
         linenum = str(lineno).rjust(max_lineno_width)  # right aling lineno
-        if abs(lineno - current_lineno) <= 10:  # show 10 prev and following lines
+        if abs(lineno - current_lineno) <= 10:  # show +- 10 lines.
             out = f"{invert_color}{linenum}{reset_color} {line_prefix}{line}"
             # invert color and reset color lenghts are added to width since
             # they are invisible and dont actually take up space
@@ -219,7 +227,7 @@ def add_frame(frame):
 def do_goto(frame, user_input):
     """Wohoo. goto in python."""
     command_parts = user_input.split(" ")
-    if command_parts[0] not in ("!g", "!goto"):
+    if command_parts[0].lower() not in ("!g", "!goto"):
         print(f"Invalid bang {user_input}")
         return
     if len(command_parts) == 2:
@@ -230,7 +238,7 @@ def do_goto(frame, user_input):
             print("Invalid line number. Use: !g 123 or !goto 123")
             return
     else:
-        print("Invalid bang. Use: !g 123 or !goto 123")
+        print("Invalid line number. Use: !g 123 or !goto 123")
         return
 
     try:
@@ -245,56 +253,34 @@ def do_goto(frame, user_input):
 
 def step_condition(user_input):
     command_parts = user_input.split(" ", 1)
-    if command_parts[0] not in ("!c", "!condition"):
+    if command_parts[0].lower() not in ("!c", "!condition"):
         print(f"Invalid bang {user_input}")
         return "continue-in-repl"
     if len(command_parts) == 2:
         user_expression = command_parts[1]
-        # print(
-        #    f"Stepping until bool(eval({repr(user_expression)}, frame.f_globals, frame.f_locals)) is True in"
-        #    " active frame (escape level is ignored). All NameErrors are"
-        #    " ignored so this can hang your terminal."
-        #    " Continue?"
-        # )
-        # choice = input("(Y/n): ")
-        # if choice == "Y":
-
         try:
-            res = bool(eval(user_expression))
+            eval(user_expression)
         except SyntaxError:
             print("SyntaxError. Ignoring the step condition.")
             return "continue-in-repl"
-        except Exception:  # Ignore all other errors. We only warn for syntax error.
+        # Ignore all other errors. We only warn for syntax error.
+        except Exception:
             pass
 
         CURRENT_SETTINGS["step_until_expression"] = user_expression
         print(
-            f"Stepping until 'bool(eval({repr(user_expression)}))' is True in active frame. Escape level is ignored."
+            f"Stepping until 'bool(eval({repr(user_expression)}))' is True in"
+            " active frame. Escape level is ignored. All errors are ignored."
         )
         return "step-with-repl"
-        # else:
-        #    print("cancelling")
-        #    return "continue-in-repl"
-
-        # try:
-        #     res = bool(eval(user_expression, frame.f_globals, frame.f_locals))
-        # except SyntaxError:
-        #     print("SyntaxError. Ignoring the expression.")
-        # except Exception:  # Ignore all other errors. Code will just keep running.
-        #     pass
-        # else:
-        #     if res:
-        #         print("true")
-        #     else:
-        #         print("false")
     else:
-        print("Invalid bang. Use: !c x==0 or !condition x==0")
+        print("Missing expression. Use: !c x==0 or !condition x==0")
         return "continue-in-repl"
 
 
 def echo_previous(user_input):
     command_parts = user_input.split(" ")
-    if command_parts[0] not in ("!e", "!echo"):
+    if command_parts[0].lower() not in ("!e", "!echo"):
         print(f"Invalid bang {user_input}")
         return
     if len(command_parts) == 2:
@@ -305,11 +291,90 @@ def echo_previous(user_input):
             print("Invalid echo count. Use: !e 3 or !echo 3")
             return
     else:
-        print("Invalid bang. Use: !e 3 or !echo 3")
+        print("Invalid echo count. Use: !e 3 or !echo 3")
         return
 
     CURRENT_SETTINGS["echo_count"] = echo_count
     print("Repeating previous bang", echo_count, "times.")
+
+
+def pickle_object(frame, user_input):
+    """Pickles a Python object and saves it in the 'pickles' subdirectory with
+    the rightmost part of the name as the file name.
+    This function assumes read-write access was already checked for and that
+    the directory was initialized.
+    """
+    command_parts = user_input.split(" ", 1)
+    if command_parts[0].lower() not in ("!p", "!pickle"):
+        print(f"Invalid bang {user_input}")
+        return
+    if len(command_parts) == 2:
+        object_name = command_parts[1]
+    else:
+        print("Missing object name. Use: !p my.object or !pickle my.object")
+        return
+
+    file_name = f"{object_name.split('.')[-1]}"
+
+    pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
+
+    file_path = os.path.join(pickles_dir, file_name)
+
+    for part in object_name.split("."):  # Allow dots in name by splitting.
+        if not part.isidentifier():
+            print(f"{repr(object_name)} is not a valid identifier.")
+            return
+
+    try:
+        object_ref = eval(object_name, frame.f_globals, frame.f_locals)
+    except Exception as e:
+        print(f"Error evaluating object {repr(object_name)}: {e}")
+        return
+
+    try:
+        with open(file_path, "wb") as file:
+            pickle.dump(object_ref, file, protocol=4)
+    except Exception as e:
+        print(f"Error pickling object {repr(object_name)}: {e}")
+        return
+
+    print(f"Object {repr(object_name)} pickled and saved as {repr(file_path)}.")
+
+
+def unpickle_object(frame, user_input):
+    """Loads a pickle file and returns the object and creation date."""
+
+    command_parts = user_input.split(" ", 1)
+    if command_parts[0].lower() not in ("!l", "!load"):
+        print(f"Invalid bang {user_input}")
+        return
+    if len(command_parts) == 2:
+        object_name = command_parts[1]
+    else:
+        print("Missing object name. Use: !l my.object or !load my.object")
+        print()
+        print_pickles()
+        print()
+        return
+
+    file_name = f"{object_name.split('.')[-1]}"
+    pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
+    file_path = os.path.join(pickles_dir, file_name)
+
+    if not object_name.isidentifier():
+        print(f"{repr(object_name)} is not a valid identifier.")
+        return
+
+    try:
+        with open(file_path, "rb") as file:
+            object_ref = pickle.load(file)
+    except Exception as e:
+        print(f"Error loading pickle file {repr(file_path)}: {e}")
+        return
+
+    frame.f_locals[object_name] = object_ref
+
+    print(f"{repr(object_name)} loaded into active frame from {repr(file_path)}.")
 
 
 def print_help():
