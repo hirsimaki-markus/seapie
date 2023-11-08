@@ -19,6 +19,8 @@ def main():
         return "nice"
 
     seapie.prompt()
+    # 0 / 0
+    importmonkey.add_path("../")
 
     x = 1
     y = 2
@@ -26,8 +28,6 @@ def main():
     # print(locals()["z"])
     print(z)
     lol()
-
-    importmonkey.add_path()
 
 
 if __name__ == "__main__":

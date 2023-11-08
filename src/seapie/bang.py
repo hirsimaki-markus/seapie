@@ -220,7 +220,8 @@ def add_frame(frame):
         "Added global variable 'FRAME' to root frame. The FRAME refers to"
         f" {repr(frame.f_code.co_name)} frame {repr(frame)}. Remember to"
         " delete the reference with 'del FRAME' to avoid circular references"
-        " or memory leaks when you are done with the frame."
+        " or memory leaks when you are done with the frame. Use !up to go to"
+        " root frame and !down to get back where you were."
     )
 
 
@@ -303,6 +304,8 @@ def pickle_object(frame, user_input):
     the rightmost part of the name as the file name.
     This function assumes read-write access was already checked for and that
     the directory was initialized.
+
+    dokumentoi mitä tekee nimille ja että nimet joissa . toimii myös
     """
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!p", "!pickle"):
@@ -311,7 +314,7 @@ def pickle_object(frame, user_input):
     if len(command_parts) == 2:
         object_name = command_parts[1]
     else:
-        print("Missing object name. Use: !p my.object or !pickle my.object")
+        print("Missing object name. Use: !p my_object or !pickle my_object")
         return
 
     file_name = f"{object_name.split('.')[-1]}"
@@ -322,7 +325,11 @@ def pickle_object(frame, user_input):
 
     for part in object_name.split("."):  # Allow dots in name by splitting.
         if not part.isidentifier():
-            print(f"{repr(object_name)} is not a valid identifier.")
+            print(
+                f"{repr(object_name)} is not a valid identifier. Do not use"
+                ' literals like "!p \'hello\'" or calls like "!p print()".'
+                ' Use "!p hello" or "!p print" instead to refer to an object.'
+            )
             return
 
     try:
@@ -351,7 +358,7 @@ def unpickle_object(frame, user_input):
     if len(command_parts) == 2:
         object_name = command_parts[1]
     else:
-        print("Missing object name. Use: !l my.object or !load my.object")
+        print("Missing object name. Use: !l objectname or !load objectname")
         print()
         print_pickles()
         print()

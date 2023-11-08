@@ -232,8 +232,8 @@ testaa saako tracetettua itsensä. jos saa niin
 
 
 
-
-!(p)ickle <object>    pickle
+history on varmaan josks myöhemmin ja sama custom inputille.
+nyt tärkee dokumentaatio kuntoon ja siivous sekä remote debug
 !(h)istroy stai snippet mutta vaatii custom inputin.
 
 
@@ -250,7 +250,6 @@ tee sittenkin oma input koska historia?
 
 
 joskus tulevaisuudessa tai jätä ehkä todo: ! ja !! ja !!!        mitä nää tekee? ehkä sama kuin ipython _ ja __ ja ___ ?'
-
 
 
 
@@ -281,3 +280,41 @@ tää auttaa jokaiseen bangiin mikä muuttaa tilaa.
 
 
 mahdollista prodin monkey patch remote debuggauksella?
+
+you can move objects between sessions or between scopes by pickling them
+
+picke dokuihin sana variable.
+
+taio myös __name__ saataville? tai joku muu vastaava
+
+!step ja !c kuuluu samaa koska stepin ei tarvi tukea countteja kun on echo
+
+
+
+
+hookin jättäminen prodiin:
+yks lanka kuuntelee tuleeko soketti viestiä. se viesti lähetetään menemällä SSHlla servulle ja avaamall
+seapie remote client.
+
+jos tulee soketti viesti, se lanka asettaa jonkin envi muuttujan. hookki minkä oot jättäny vaikka
+avaa debuggerin puhumalla clientille. se hookki pitää olla jossain funktiossa mitä kutsutaan vähän väliä.
+
+dokumentoi että __line__ muuttuu aina kun steppaat tms ja event määrittyy current eventin mukaan.
+
+jos oot interactive interpreereissä niin ei pidä steppaa vaan mieluummon !r koska se lopettaa tracettamisen.
+!s saa aikaan sen että seapie aukeaa uudelleen vaan suoraan.
+
+johonki nootti että debuggerin ei pitisi kaatua koskaan, bugi report pls jos kaatuu
+
+# näkyy status baarissa
+__lineno__
+__event__
+__scope__
+__source__ # strippaa trailing ja leading whitespace ja newline
+
+# e näy status baarissa
+__retval__ # None if not in "return" event
+__exception__ # None if not in exception event, else (exception, value, traceback)
+
+# tää on valmiina paketista
+__file__

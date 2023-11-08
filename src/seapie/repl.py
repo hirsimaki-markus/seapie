@@ -3,6 +3,8 @@
 
 import codeop
 import sys
+import inspect
+import linecache
 from .version import seapie_ver
 from .status import status_bar
 from .helpers import (
@@ -17,8 +19,8 @@ from .settings import CURRENT_SETTINGS, __DEFAULT_SETTINGS__
 
 
 # These can be set to anything
-PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
-PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
+PS1 = "🥧 >>> "  # Allows customizing sys.ps1 equivalent for seapie.
+PS2 = "🥧 ... "  # Allows customizing sys.ps2 equivalent for seapie.
 
 
 def repl_input(frame):
@@ -130,9 +132,6 @@ def repl_exec(frame, source):
 
     # dont save compiled to code as compilation failed. code remains str
 
-    # modified_locals = frame.f_locals.copy()  # Avoids propagating modification
-    # modified_locals["__line__"] = frame.f_lineno
-    # modified_locals["__event__"] = event
 
     # local_namespace = frame.f_locals.copy()
     # global_namespace = frame.f_globals.copy()
@@ -200,8 +199,29 @@ def repl_loop(frame, event, arg):
         # otherwise we would need
         # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
         # maybe. or it works because we are in the trace function.
-        current_frame.f_locals["__line__"] = current_frame.f_lineno
+        current_frame.f_locals["__lineno__"] = current_frame.f_lineno
+        current_frame.f_locals["__scope__"] = current_frame.f_code.co_name
         current_frame.f_locals["__event__"] = event
+        try:
+            filename = current_frame.f_code.co_filename
+            lineno = current_frame.f_lineno
+            current_line = linecache.getline(filename, lineno)
+            source = current_line.strip()
+        except Exception as e:
+            source = None
+        current_frame.f_locals["__source__"] = source
+        if event == "return":
+            current_frame.f_locals["__retval__"] = arg
+        else:
+            current_frame.f_locals["__retval__"] = None
+        if event == "exception":
+            current_frame.f_locals["__exception__"] = arg
+        else:
+            current_frame.f_locals["__exception__"] = None
+        # NOTE: above section should always use "current_frame" not "frame"
+        # NOTE: THE CONNECTION BETWEEN THESE MAGIC VALUES AND THE STATUS BAR
+        # IS MAINTAINED MANUALLY IN SOURCE. THESE ARE NOT PASSED AS ARGS.
+        # i.e: status bar could use different names and definitions.
 
         status_bar(current_frame, event, arg)  # Print bar based on settings.
 
@@ -259,8 +279,26 @@ def prompt():
         CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)  # reset settings on restart.
         init_seapie_directory()
         check_rw_access()
+
+
+
+        #print(sys._getframe(1))
+        #print(inspect.currentframe().f_back)
+
+
+        #sys._getframe(1).f_trace = repl_loop
+        #inspect.currentframe().f_trace = repl_loop
+        inspect.currentframe().f_back.f_trace = repl_loop
         sys.settrace(repl_loop)  # Tracing would start on next traceable event.
-        sys._getframe(1).f_trace = repl_loop  # Start tracing now instead.
+
+
+
+        # Start tracing now instead.
+
+        # Any line in this function that happens after setting the trace will
+        # run only after returning from tracing with !r
+        # print(inspect.currentframe().f_back.f_code.co_name)
+        # print(sys._getframe(1).f_code.co_name)
 
     elif trace is not repl_loop:
         msg = (
