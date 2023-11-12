@@ -19,16 +19,17 @@ def main():
 
     seapie.prompt()
 
-    0 / 0
+    # 0 / 0
 
     x = 1
+    lol()
+
     y = 2
     z = 3
     # print(locals()["z"])
     print(x)
     print(y)
     print(z)
-    lol()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 
-"""Docstring. cpython depdency warning minne kaikkialle"""
+"""Docstring. cpython depdency warning minne kaikkialle
+
+mostly everything here is monolithic and the function are not reusable so you
+should not try importing them except for the prompt. a lot of stuff depends on
+a state stored in settings.py
+
+
+
+"""
 from .version import seapie_ver
 from .repl import repl_input, repl_exec, repl_print, repl_loop, prompt
 

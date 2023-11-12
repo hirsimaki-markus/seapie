@@ -131,7 +131,7 @@ def check_rw_access():
         exit()
 
 
-def inject_magic(current_frame, event, arg):
+def update_magic_variables(current_frame, event, arg):
     # inject useful variables to the frame. this change should propagate
     # since we are in trace function. and running 3.12.
     # this must happen before exec (i think)

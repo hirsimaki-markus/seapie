@@ -5,7 +5,7 @@ import linecache
 from .settings import CURRENT_SETTINGS
 
 
-def status_bar(current_frame, event, arg):
+def update_status_bar(current_frame, event, arg):
     """Uses vt100 coes to print a status bar at the top of the
     terminal. this has the side effect of overwriting history. If getting
     terminal size fails due to file descriptor not being connected to

@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 
+"""Docstring"""
 
 import codeop
 import sys
 import inspect
+import ctypes
 from .version import seapie_ver
-from .status import status_bar
+from .status import update_status_bar
 from .helpers import (
     escape_frame,
     should_auto_step,
     should_simulate_user_input,
     init_seapie_directory,
     check_rw_access,
-    inject_magic,
+    update_magic_variables,
 )
-from .bang import bang_handler, print_tb
+from .bang import bang_handler, do_tb
 from .settings import CURRENT_SETTINGS, __DEFAULT_SETTINGS__
 
 
@@ -113,7 +115,7 @@ def repl_input(frame):
                 return entry
         except (SyntaxError, ValueError, OverflowError):
             # raise type(e) from None  # todo: onko tää oikein? rereaise none?
-            print_tb(frame, num_frames_to_hide=4)
+            do_tb(frame, num_frames_to_hide=4)
             # hiding: repl_input, codeop.compile_command,
             # codeop._maybe_compile, codeop._compile
             lines = []
@@ -149,8 +151,10 @@ def repl_exec(frame, source):
     # c_int1 = ctypes.c_int(1)
     # ctypes.pythonapi.PyFrame_LocalsToFast(c_frame, c_int1)
     # 1 stands for the ability to propagate removal of values
-    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),
-    # ctypes.c_int(1))
+
+    # this block is also required so that the repl can properly overwrite
+    # stuff like function definitions
+    ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),ctypes.c_int(1))
 
 
 def repl_print():
@@ -185,27 +189,27 @@ def repl_loop(frame, event, arg):
     while True:
         current_frame = escape_frame(frame)  # Escape frame based on settings.
 
-        # inject magic vaiables based on settings.
-        inject_magic(current_frame, event, arg)
+        update_magic_variables(current_frame, event, arg)
 
-        status_bar(current_frame, event, arg)  # Print bar based on settings.
+        update_status_bar(current_frame, event, arg)
 
         if should_auto_step(frame):  # This ignores escape level
-            # status bar updates will override each other.
             return repl_loop
-        elif inp := should_simulate_user_input():
+
+        if inp := should_simulate_user_input():
             user_input = inp
             # print(PS1, user_input)
         else:
             user_input = repl_input(current_frame)
 
-        should_step = bang_handler(user_input, current_frame, event, arg)
-        if should_step == "step-with-repl":  # step source, reopen repl
-            return repl_loop
-        elif should_step == "step-without-repl":  # step source, disabe trace
-            return None
-        elif should_step == "continue-in-repl":  # no step, continue this repl
-            continue
+        if user_input.startswith("!"):
+            should_step = bang_handler(user_input, current_frame, event, arg)
+            if should_step == "step-with-repl":  # step source, reopen repl
+                return repl_loop
+            elif should_step == "step-without-repl":  # step source, disabe trace
+                return None
+            elif should_step == "continue-in-repl":  # no step, continue this repl
+                continue
         else:
             # got code.
             try:
@@ -213,7 +217,7 @@ def repl_loop(frame, event, arg):
             except SystemExit:  # Separate exit before catching base exception.
                 exit()
             except BaseException:
-                print_tb(
+                do_tb(
                     current_frame, num_frames_to_hide=3
                 )  # Seapie occupies 3 frames here.
                 # the frames are repl-loop, repl-exec, <string> from exec()

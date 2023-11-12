@@ -35,89 +35,49 @@ def bang_handler(user_input, frame, event, arg):
         else:
             CURRENT_SETTINGS["previous_bang"] = original_input
 
+    # These bangs do not contain arguments so using simple check is ok.
     if user_input in ("!q", "!quit"):
-        exit()
+        return do_quit()
     elif user_input in ("!s", "!step"):
-        if CURRENT_SETTINGS["callstack_escape_level"] != 0:
-            CURRENT_SETTINGS["callstack_escape_level"] = 0
-            print("Resetting escape level to 0 before stepping.")
-        return "step-with-repl"
+        return do_step()
     elif user_input in ("!r", "!run"):
-        frame.f_trace = None
-        sys.settrace(None)
-        return "step-without-repl"
+        return do_run(frame)
     elif user_input in ("!h", "!help"):
-        print_help()
-        return "continue-in-repl"
-    elif user_input in ("!t", "!traceback", "!tb"):
-        print_tb(frame, 0)  # there are no seapie related frames to hide since
-        # there is no exception going on.
-        return "continue-in-repl"
+        return do_help()
+    elif user_input in ("!t", "!traceback"):
+        return do_tb(frame, num_frames_to_hide=0)  # No active exc -> num is 0.
     elif user_input in ("!b", "!bar"):
-        CURRENT_SETTINGS["show_bar"] = not CURRENT_SETTINGS["show_bar"]
-        if CURRENT_SETTINGS["show_bar"]:
-            print("Bar on.")
-        else:
-            print("Bar off.")
-        return "continue-in-repl"
+        return do_bar()
     elif user_input in ("!m", "!magic"):
-        CURRENT_SETTINGS["inject_magic"] = not CURRENT_SETTINGS["inject_magic"]
-        if CURRENT_SETTINGS["inject_magic"]:
-            print("Magic injection on.")
-        else:
-            # todo: tee tästä funktio ja ylipäänsä muut tässä filessä
-            msg = (
-                "Magic injection off. Already injected variables remain in"
-                " global/local scopes but won't update."
-            )
-            print(msg)
-        return "continue-in-repl"
+        return do_magic()
     elif user_input in ("!i", "!info"):
-        print("\n".join(get_status(frame, event, arg)))
-        return "continue-in-repl"
+        return do_info(frame, event, arg)
     elif user_input in ("!w", "!where"):
-        print_source_lines(frame)
-        return "continue-in-repl"
+        return do_where(frame)
     elif user_input in ("!u", "!up"):
-        up()
-        return "continue-in-repl"
+        return do_up()
     elif user_input in ("!d", "!down"):
-        down()
-        return "continue-in-repl"
+        return do_down()
     elif user_input in ("!f", "!frame"):
-        add_frame(frame)
-        return "continue-in-repl"
+        return do_frame(frame)
 
+    # These bangs contain arguments so must use startswith.
     elif user_input.startswith("!g") or user_input.startswith("!goto"):
-        # must use startswith since argument is expected
-        do_goto(frame, original_input)
-        return "continue-in-repl"
+        return do_goto(frame, original_input)
     elif user_input.startswith("!c") or user_input.startswith("!condition"):
-        if CURRENT_SETTINGS["callstack_escape_level"] != 0:
-            CURRENT_SETTINGS["callstack_escape_level"] = 0
-            print("Resetting escape level to 0 before setting condition.")
-        returnvalue = step_condition(original_input)
-        return returnvalue
+        return do_condition(original_input)
     elif user_input.startswith("!p") or user_input.startswith("!pickle"):
-        pickle_object(frame, original_input)
-        return "continue-in-repl"
+        return do_picle(frame, original_input)
     elif user_input.startswith("!l") or user_input.startswith("!load"):
-        unpickle_object(frame, original_input)
-        return "continue-in-repl"
+        return do_unpickle(frame, original_input)
     elif user_input.startswith("!e") or user_input.startswith("!echo"):
-        echo_previous(original_input)
-        return "continue-in-repl"
+        return do_echo(original_input)
 
     else:
-        # got a bang that doesnt match anything known
-        if original_input.startswith("!"):
-            print(f"Invalid bang {repr(original_input)}")
-            return "continue-in-repl"
-        else:  # got code
-            pass
+        return do_invalid(original_input)  # Got an invalid bang.
 
 
-def print_tb(frame, num_frames_to_hide):
+def do_tb(frame, num_frames_to_hide):
     """
     if exception occurs in seapie, num frames tells how many seapie
     relatd frames to hide from the traceback found in exception.
@@ -164,79 +124,10 @@ def print_tb(frame, num_frames_to_hide):
     if exc_type is not None and exc_val is not None:
         print(f"{exc_type.__name__}: {exc_val}")
 
-
-def print_source_lines(frame):
-    """Reponds to term size
-
-    it might be possible to make this fail?
-    """
-    try:
-        width = os.get_terminal_size().columns
-    except OSError:
-        width = 80
-
-    current_lineno = frame.f_lineno
-    filename = frame.f_globals.get("__file__")  # Null check with .get
-
-    if filename is None:
-        print("Unable to retrieve the current filename.")
-        return
-
-    try:
-        with open(filename, "r") as file:
-            lines = file.readlines()
-    except OSError as e:
-        print(f"Error opening file: {e}")
-        return
-
-    invert_color = "\x1b[7m"
-    reset_color = "\x1b[0m"
-
-    max_lineno_width = len(str(len(lines)))
-    if max_lineno_width < 6:
-        max_lineno_width = 6  # the string ' Next' is 5 character
-
-    for lineno, line in enumerate(lines, start=1):
-        line = line[:-1]  # Remove trailing newline with -1
-        linenum = str(lineno).rjust(max_lineno_width)  # right aling lineno
-        if abs(lineno - current_lineno) <= 10:  # show +- 10 lines.
-            if lineno != current_lineno:
-                out = f"{linenum} {line}"
-            else:
-                out = (
-                    f"{invert_color}{' Next '.rjust(max_lineno_width)}"
-                    f"{reset_color} {line}"
-                )
-            # invert color and reset color lenghts are added to width since
-            # they are invisible and dont actually take up space
-            out = out[:width]
-
-            print(out)
+    return "continue-in-repl"
 
 
-def up():
-    CURRENT_SETTINGS["callstack_escape_level"] += 1
-    print(
-        "Setting escape level to"
-        f" {CURRENT_SETTINGS['callstack_escape_level']}."
-        " Check status bar for current frame of this prompt."
-    )
-
-
-def down():
-    if CURRENT_SETTINGS["callstack_escape_level"] <= 0:
-        CURRENT_SETTINGS["callstack_escape_level"] = 0
-        print("Can't do deeper in callstack. Resetting escape level to 0.")
-    else:
-        CURRENT_SETTINGS["callstack_escape_level"] -= 1
-        print(
-            "Setting escape level to"
-            f" {CURRENT_SETTINGS['callstack_escape_level']}."
-            " Check status bar for current frame of this prompt."
-        )
-
-
-def add_frame(frame):
+def do_frame(frame):
     """Add reference to base frame globals. The frame added is the one
     currently operated on by interpeter."""
     frame_to_add = frame
@@ -252,6 +143,7 @@ def add_frame(frame):
         " or memory leaks when you are done with the frame. Use !up to go to"
         " root frame and !down to get back where you were."
     )
+    return "continue-in-repl"
 
 
 def do_goto(frame, user_input):
@@ -259,29 +151,33 @@ def do_goto(frame, user_input):
     command_parts = user_input.split(" ")
     if command_parts[0].lower() not in ("!g", "!goto"):
         print(f"Invalid bang {user_input}")
-        return
+        return "continue-in-repl"
     if len(command_parts) == 2:
         line_number_str = command_parts[1]
         if line_number_str.isdigit():
             line_number = int(line_number_str)
         else:
             print("Invalid line number. Use: !g 123 or !goto 123")
-            return
+            return "continue-in-repl"
     else:
         print("Invalid line number. Use: !g 123 or !goto 123")
-        return
+        return "continue-in-repl"
 
     try:
         frame.f_lineno = line_number
     except Exception as e:
         print("Goto failed:", str(e))
-        return
+        return "continue-in-repl"
     else:
         print("Goto succeeded. Next line to execute is", line_number)
-        return
+        return "continue-in-repl"
 
 
-def step_condition(user_input):
+def do_condition(user_input):
+    if CURRENT_SETTINGS["callstack_escape_level"] != 0:
+        CURRENT_SETTINGS["callstack_escape_level"] = 0
+        print("Resetting escape level to 0 before setting condition.")
+
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!c", "!condition"):
         print(f"Invalid bang {user_input}")
@@ -308,27 +204,26 @@ def step_condition(user_input):
         return "continue-in-repl"
 
 
-def echo_previous(user_input):
+def do_echo(user_input):
     command_parts = user_input.split(" ")
     if command_parts[0].lower() not in ("!e", "!echo"):
         print(f"Invalid bang {user_input}")
-        return
+        return "continue-in-repl"
     if len(command_parts) == 2:
         echo_count_str = command_parts[1]
         if echo_count_str.isdigit():
             echo_count = int(echo_count_str)
         else:
             print("Invalid echo count. Use: !e 3 or !echo 3")
-            return
+            return "continue-in-repl"
     else:
         print("Invalid echo count. Use: !e 3 or !echo 3")
-        return
-
+        return "continue-in-repl"
     CURRENT_SETTINGS["echo_count"] = echo_count
     print("Repeating previous bang", echo_count, "times.")
 
 
-def pickle_object(frame, user_input):
+def do_picle(frame, user_input):
     """Pickles a Python object and saves it in the 'pickles' subdirectory with
     the rightmost part of the name as the file name.
     This function assumes read-write access was already checked for and that
@@ -339,12 +234,12 @@ def pickle_object(frame, user_input):
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!p", "!pickle"):
         print(f"Invalid bang {user_input}")
-        return
+        return "continue-in-repl"
     if len(command_parts) == 2:
         obj_name = command_parts[1]
     else:
         print("Missing object name. Use: !p my_object or !pickle my_object")
-        return
+        return "continue-in-repl"
 
     file_name = f"{obj_name.split('.')[-1]}"
 
@@ -359,31 +254,32 @@ def pickle_object(frame, user_input):
                 ' literals like "!p \'hello\'" or calls like "!p print()".'
                 ' Use "!p hello" or "!p print" instead to refer to an object.'
             )
-            return
+            return "continue-in-repl"
 
     try:
         object_ref = eval(obj_name, frame.f_globals, frame.f_locals)
     except Exception as e:
         print(f"Error evaluating object {repr(obj_name)}: {e}")
-        return
+        return "continue-in-repl"
 
     try:
         with open(file_path, "wb") as file:
             pickle.dump(object_ref, file, protocol=4)
     except Exception as e:
         print(f"Error pickling object {repr(obj_name)}: {e}")
-        return
+        return "continue-in-repl"
 
     print(f"Object {repr(obj_name)} pickled and saved as {repr(file_path)}.")
+    return "continue-in-repl"
 
 
-def unpickle_object(frame, user_input):
+def do_unpickle(frame, user_input):
     """Loads a pickle file and returns the object and creation date."""
 
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!l", "!load"):
         print(f"Invalid bang {user_input}")
-        return
+        return "continue-in-repl"
     if len(command_parts) == 2:
         obj_name = command_parts[1]
     else:
@@ -391,7 +287,7 @@ def unpickle_object(frame, user_input):
         print()
         print_pickles()
         print()
-        return
+        return "continue-in-repl"
 
     file_name = f"{obj_name.split('.')[-1]}"
     pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
@@ -399,19 +295,145 @@ def unpickle_object(frame, user_input):
 
     if not obj_name.isidentifier():
         print(f"{repr(obj_name)} is not a valid identifier.")
-        return
+        return "continue-in-repl"
 
     try:
         with open(file_path, "rb") as file:
             object_ref = pickle.load(file)
     except Exception as e:
         print(f"Error loading pickle file {repr(file_path)}: {e}")
-        return
+        return "continue-in-repl"
 
     frame.f_locals[obj_name] = object_ref
 
     print(f"{repr(obj_name)} loaded into active frame from {repr(file_path)}.")
+    return "continue-in-repl"
 
 
-def print_help():
+def do_help():
     print("nice")
+    return "continue-in-repl"
+
+
+def do_magic():
+    CURRENT_SETTINGS["inject_magic"] = not CURRENT_SETTINGS["inject_magic"]
+    if CURRENT_SETTINGS["inject_magic"]:
+        print("Magic injection on.")
+    else:
+        # todo: tee tästä funktio ja ylipäänsä muut tässä filessä
+        msg = (
+            "Magic injection off. Already injected variables remain in"
+            " global/local scopes but won't update."
+        )
+        print(msg)
+    return "continue-in-repl"
+
+
+def do_step():
+    if CURRENT_SETTINGS["callstack_escape_level"] != 0:
+        CURRENT_SETTINGS["callstack_escape_level"] = 0
+        print("Resetting escape level to 0 before stepping.")
+    return "step-with-repl"
+
+
+def do_quit():
+    exit()
+
+
+def do_run(frame):
+    frame.f_trace = None
+    sys.settrace(None)
+    return "step-without-repl"
+
+
+def do_bar():
+    CURRENT_SETTINGS["show_bar"] = not CURRENT_SETTINGS["show_bar"]
+    if CURRENT_SETTINGS["show_bar"]:
+        print("Bar on.")
+    else:
+        print("Bar off.")
+    return "continue-in-repl"
+
+
+def do_info(frame, event, arg):
+    print("\n".join(get_status(frame, event, arg)))
+    return "continue-in-repl"
+
+
+def do_where(frame):
+    """Reponds to term size
+
+    it might be possible to make this fail?
+    """
+    try:
+        width = os.get_terminal_size().columns
+    except OSError:
+        width = 80
+
+    current_lineno = frame.f_lineno
+    filename = frame.f_globals.get("__file__")  # Null check with .get
+
+    if filename is None:
+        print("Unable to retrieve the current filename.")
+        return "continue-in-repl"
+
+    try:
+        with open(filename, "r") as file:
+            lines = file.readlines()
+    except OSError as e:
+        print(f"Error opening file: {e}")
+        return "continue-in-repl"
+
+    invert_color = "\x1b[7m"
+    reset_color = "\x1b[0m"
+
+    max_lineno_width = len(str(len(lines)))
+    if max_lineno_width < 6:
+        max_lineno_width = 6  # the string ' Next' is 5 character
+
+    for lineno, line in enumerate(lines, start=1):
+        line = line[:-1]  # Remove trailing newline with -1
+        linenum = str(lineno).rjust(max_lineno_width)  # right aling lineno
+        if abs(lineno - current_lineno) <= 10:  # show +- 10 lines.
+            if lineno != current_lineno:
+                out = f"{linenum} {line}"
+            else:
+                out = (
+                    f"{invert_color}{' Next '.rjust(max_lineno_width)}"
+                    f"{reset_color} {line}"
+                )
+            # invert color and reset color lenghts are added to width since
+            # they are invisible and dont actually take up space
+            out = out[:width]
+
+            print(out)
+    return "continue-in-repl"
+
+
+def do_up():
+    CURRENT_SETTINGS["callstack_escape_level"] += 1
+    print(
+        "Setting escape level to"
+        f" {CURRENT_SETTINGS['callstack_escape_level']}."
+        " Check status bar for current frame of this prompt."
+    )
+    return "continue-in-repl"
+
+
+def do_down():
+    if CURRENT_SETTINGS["callstack_escape_level"] <= 0:
+        CURRENT_SETTINGS["callstack_escape_level"] = 0
+        print("Can't do deeper in callstack. Resetting escape level to 0.")
+    else:
+        CURRENT_SETTINGS["callstack_escape_level"] -= 1
+        print(
+            "Setting escape level to"
+            f" {CURRENT_SETTINGS['callstack_escape_level']}."
+            " Check status bar for current frame of this prompt."
+        )
+    return "continue-in-repl"
+
+
+def do_invalid(original_input):
+    print(f"Invalid bang {repr(original_input)}")
+    return "continue-in-repl"
