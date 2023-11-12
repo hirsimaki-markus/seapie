@@ -203,7 +203,10 @@ def print_source_lines(frame):
             if lineno != current_lineno:
                 out = f"{linenum} {line}"
             else:
-                out = f"{invert_color}{' Next '.rjust(max_lineno_width)}{reset_color} {line}"
+                out = (
+                    f"{invert_color}{' Next '.rjust(max_lineno_width)}"
+                    f"{reset_color} {line}"
+                )
             # invert color and reset color lenghts are added to width since
             # they are invisible and dont actually take up space
             out = out[:width]
@@ -382,7 +385,7 @@ def unpickle_object(frame, user_input):
         print(f"Invalid bang {user_input}")
         return
     if len(command_parts) == 2:
-        object_name = command_parts[1]
+        obj_name = command_parts[1]
     else:
         print("Missing object name. Use: !l objectname or !load objectname")
         print()
@@ -390,12 +393,12 @@ def unpickle_object(frame, user_input):
         print()
         return
 
-    file_name = f"{object_name.split('.')[-1]}"
+    file_name = f"{obj_name.split('.')[-1]}"
     pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
     file_path = os.path.join(pickles_dir, file_name)
 
-    if not object_name.isidentifier():
-        print(f"{repr(object_name)} is not a valid identifier.")
+    if not obj_name.isidentifier():
+        print(f"{repr(obj_name)} is not a valid identifier.")
         return
 
     try:
@@ -405,9 +408,9 @@ def unpickle_object(frame, user_input):
         print(f"Error loading pickle file {repr(file_path)}: {e}")
         return
 
-    frame.f_locals[object_name] = object_ref
+    frame.f_locals[obj_name] = object_ref
 
-    print(f"{repr(object_name)} loaded into active frame from {repr(file_path)}.")
+    print(f"{repr(obj_name)} loaded into active frame from {repr(file_path)}.")
 
 
 def print_help():

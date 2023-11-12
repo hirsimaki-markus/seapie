@@ -136,7 +136,8 @@ def inject_magic(current_frame, event, arg):
     # since we are in trace function. and running 3.12.
     # this must happen before exec (i think)
     # otherwise we would need
-    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
+    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),
+    # ctypes.c_int(1))
     # maybe. or it works because we are in the trace function.
     if not CURRENT_SETTINGS["inject_magic"]:
         return
@@ -152,7 +153,7 @@ def inject_magic(current_frame, event, arg):
         lineno = current_frame.f_lineno
         current_line = linecache.getline(filename, lineno)
         source = current_line.strip()
-    except Exception as e:
+    except Exception:
         source = None
     current_frame.f_locals["__source__"] = source
 

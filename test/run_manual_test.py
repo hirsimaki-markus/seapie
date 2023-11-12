@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import importmonkey  # type: ignore  # silence pylance
+import importmonkey  # type: ignore
 
-importmonkey.add_path("../src")
-
-import seapie
+importmonkey.add_path("../src")  # type: ignore
+import seapie  # noqa: E402
 
 
 def main():
@@ -15,18 +14,19 @@ def main():
         for i in range(2):
             kissa = "kissa"
             x = "x"
-            print(x)
+            print(x, kissa)
         return "nice"
 
     seapie.prompt()
 
-    # 0 / 0
-    importmonkey.add_path("../")
+    0 / 0
 
     x = 1
     y = 2
     z = 3
     # print(locals()["z"])
+    print(x)
+    print(y)
     print(z)
     lol()
 

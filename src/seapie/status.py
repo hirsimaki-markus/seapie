@@ -7,9 +7,9 @@ from .settings import CURRENT_SETTINGS
 
 def status_bar(current_frame, event, arg):
     """Uses vt100 coes to print a status bar at the top of the
-    terminal. this has the side effect of overwriting history. If getting terminal
-    size fails due to file descriptor not being connected to terminal, nothing
-    is printed.
+    terminal. this has the side effect of overwriting history. If getting
+    terminal size fails due to file descriptor not being connected to
+    terminal, nothing is printed.
 
     if status is longer than terminal width, it gets cut.
 
@@ -35,17 +35,14 @@ def status_bar(current_frame, event, arg):
 
     print(f"{save_cursor_pos}{move_to_zero}{invert_color}", end="", flush=True)
     for line in status_lines:
-        # Slice end of message if it wont fit in one line. -1 keeps trailing space
+        # Slice end of message if it wont fit in one line.
+        # -1 keeps trailing space
         # also force leading space
         line = " " + line
         line = line[: width - 1]
         line = line.ljust(width)
         print(line)
     print(f"{reset_color}{restore_cursor_pos}", end="", flush=True)
-
-    # formatted_status = f"{invert_color}{status.ljust(width)}{reset_color}"
-    # out = f"{save_cursor_pos}{move_to_zero}{formatted_status}{restore_cursor_pos}"
-    # print(out, flush=True, end="")
 
 
 def get_status(frame, event, arg):
@@ -57,8 +54,12 @@ def get_status(frame, event, arg):
     lines = []
 
     # get variables to use in lines
-    # sep = " │ "  # This is not the same symbol as |
-    filename = frame.f_code.co_filename or "None"
+
+    # not using the first line below this comment because it could differ from
+    # __file__
+    # filename = frame.f_code.co_filename or "None"
+    filename = frame.f_globals.get("__file__", "None")
+
     scope = repr(frame.f_code.co_name) or "None"
 
     # 0 callstack
@@ -75,13 +76,14 @@ def get_status(frame, event, arg):
     try:  # 2
         filename = frame.f_code.co_filename
         lineno = frame.f_lineno
-        current_line = linecache.getline(filename, lineno)
-        lines.append(f"source: {repr(current_line.strip())}")
-    except Exception as e:
-        lines.append("None")
+        current_line = repr(linecache.getline(filename, lineno).strip())
+    except Exception:
+        current_line = repr(None)
+    lines.append(f"source: {current_line}")
 
+    sep = "  │  "  # This is not the same symbol as |
     lines.append(  # 3
-        f"lineno: {frame.f_lineno}      scope: {scope}      event: {repr(event)}"
+        f"lineno: {frame.f_lineno}{sep}scope: {scope}{sep}event: {repr(event)}"
     )
 
     # additional stuff for sometimes.

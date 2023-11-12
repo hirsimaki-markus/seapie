@@ -114,7 +114,8 @@ def repl_input(frame):
         except (SyntaxError, ValueError, OverflowError):
             # raise type(e) from None  # todo: onko tää oikein? rereaise none?
             print_tb(frame, num_frames_to_hide=4)
-            # hiding: repl_input, codeop.compile_command, codeop._maybe_compile, codeop._compile
+            # hiding: repl_input, codeop.compile_command,
+            # codeop._maybe_compile, codeop._compile
             lines = []
             continue
             # return entry  # anna tarkoituksella mennä läpi, exec hajoaa
@@ -132,19 +133,6 @@ def repl_exec(frame, source):
 
     # dont save compiled to code as compilation failed. code remains str
 
-
-    # local_namespace = frame.f_locals.copy()
-    # global_namespace = frame.f_globals.copy()
-    # exec(compiled_code, global_namespace, local_namespace)
-    # frame.f_locals.update(local_namespace)
-    # frame.f_globals.update(global_namespace)
-
-    # locals = ctypes.pythonapi.PyObject_GetAttrString(frame, "f_locals")
-    # print(locals)
-
-    # THIS CHANGE MUST OCCUR BEFORE EXEC. THIS __LINE__ CHANGE.
-    # EXEC MAKES IT PROPAGATE.
-
     exec(compiled_code, frame.f_globals, frame.f_locals)
     # This c lvel calls allows use to arbitarily change the variables in the
     # frame including introducing new ones.
@@ -153,12 +141,16 @@ def repl_exec(frame, source):
     # the changes are found when referring to variable as x instead of only
     # frame.x
 
+    # this block is not needed for the current implementation and is retained
+    # for backwards compability with earlier version of this function.
+    # this might later be deprecated.
     # this might not be needed since we are in trace func?
     # c_frame = ctypes.py_object(frame)
     # c_int1 = ctypes.c_int(1)
     # ctypes.pythonapi.PyFrame_LocalsToFast(c_frame, c_int1)
     # 1 stands for the ability to propagate removal of values
-    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
+    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),
+    # ctypes.c_int(1))
 
 
 def repl_print():
@@ -181,8 +173,8 @@ def repl_loop(frame, event, arg):
 
     # Unhandled exception happened in orginal source code
     # guard tracing into error handling mechanism
-    # stop tracing on exception. there is no use in tracing the internal error handling logic.
-    # THIS MIGHT NOT BE NEEDED AFTER ALL???
+    # stop tracing on exception. there is no use in tracing the
+    # internal error handling logic.
     if hasattr(sys, "last_traceback"):
         frame.f_trace = None
         sys.settrace(None)
@@ -193,7 +185,8 @@ def repl_loop(frame, event, arg):
     while True:
         current_frame = escape_frame(frame)  # Escape frame based on settings.
 
-        inject_magic(current_frame, event, arg)  # inject magic based on setting.
+        # inject magic vaiables based on settings.
+        inject_magic(current_frame, event, arg)
 
         status_bar(current_frame, event, arg)  # Print bar based on settings.
 
@@ -211,7 +204,7 @@ def repl_loop(frame, event, arg):
             return repl_loop
         elif should_step == "step-without-repl":  # step source, disabe trace
             return None
-        elif should_step == "continue-in-repl":  # don't step, continue this repl
+        elif should_step == "continue-in-repl":  # no step, continue this repl
             continue
         else:
             # got code.
@@ -244,26 +237,21 @@ def prompt():
             f"{sys.version_info.minor}."
             f"{sys.version_info.micro}"
         )
-        print(
-            f"Stopped on breakpoint. Seapie {seapie_ver} running on Python {pyver} on {sys.platform}."
+        msg = (
+            f"Stopped on breakpoint. Seapie {seapie_ver} running on"
+            f" Python {pyver} on {sys.platform}."
         )
-        print("Type '!help' for help menu. See status bar at the top for info.")
-        CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)  # reset settings on restart.
+        print(msg)
+        print("Type '!help' for help. See status bar at the top for info.")
+        # reset settings on restart.
+        CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)
         init_seapie_directory()
         check_rw_access()
 
-
-
-        #print(sys._getframe(1))
-        #print(inspect.currentframe().f_back)
-
-
-        #sys._getframe(1).f_trace = repl_loop
-        #inspect.currentframe().f_trace = repl_loop
+        # sys._getframe(1).f_trace = repl_loop
+        # inspect.currentframe().f_trace = repl_loop
         inspect.currentframe().f_back.f_trace = repl_loop
         sys.settrace(repl_loop)  # Tracing would start on next traceable event.
-
-
 
         # Start tracing now instead.
 
