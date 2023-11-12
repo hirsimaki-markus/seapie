@@ -389,7 +389,7 @@ def do_where(frame):
 
     max_lineno_width = len(str(len(lines)))
     if max_lineno_width < 6:
-        max_lineno_width = 6  # the string ' Next' is 5 character
+        max_lineno_width = 6  # the string ' Next ' is 6 character
 
     for lineno, line in enumerate(lines, start=1):
         line = line[:-1]  # Remove trailing newline with -1
