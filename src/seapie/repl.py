@@ -4,7 +4,6 @@
 import codeop
 import sys
 import inspect
-import linecache
 from .version import seapie_ver
 from .status import status_bar
 from .helpers import (
@@ -13,14 +12,15 @@ from .helpers import (
     should_simulate_user_input,
     init_seapie_directory,
     check_rw_access,
+    inject_magic,
 )
 from .bang import bang_handler, print_tb
 from .settings import CURRENT_SETTINGS, __DEFAULT_SETTINGS__
 
 
 # These can be set to anything
-PS1 = "🥧 >>> "  # Allows customizing sys.ps1 equivalent for seapie.
-PS2 = "🥧 ... "  # Allows customizing sys.ps2 equivalent for seapie.
+PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
+PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
 
 
 def repl_input(frame):
@@ -193,35 +193,7 @@ def repl_loop(frame, event, arg):
     while True:
         current_frame = escape_frame(frame)  # Escape frame based on settings.
 
-        # inject useful variables to the frame. this change should propagate
-        # since we are in trace function. and running 3.12.
-        # this must happen before exec (i think)
-        # otherwise we would need
-        # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
-        # maybe. or it works because we are in the trace function.
-        current_frame.f_locals["__lineno__"] = current_frame.f_lineno
-        current_frame.f_locals["__scope__"] = current_frame.f_code.co_name
-        current_frame.f_locals["__event__"] = event
-        try:
-            filename = current_frame.f_code.co_filename
-            lineno = current_frame.f_lineno
-            current_line = linecache.getline(filename, lineno)
-            source = current_line.strip()
-        except Exception as e:
-            source = None
-        current_frame.f_locals["__source__"] = source
-        if event == "return":
-            current_frame.f_locals["__retval__"] = arg
-        else:
-            current_frame.f_locals["__retval__"] = None
-        if event == "exception":
-            current_frame.f_locals["__exception__"] = arg
-        else:
-            current_frame.f_locals["__exception__"] = None
-        # NOTE: above section should always use "current_frame" not "frame"
-        # NOTE: THE CONNECTION BETWEEN THESE MAGIC VALUES AND THE STATUS BAR
-        # IS MAINTAINED MANUALLY IN SOURCE. THESE ARE NOT PASSED AS ARGS.
-        # i.e: status bar could use different names and definitions.
+        inject_magic(current_frame, event, arg)  # inject magic based on setting.
 
         status_bar(current_frame, event, arg)  # Print bar based on settings.
 
@@ -307,4 +279,5 @@ def prompt():
         )
         raise RuntimeError(msg)
     else:
-        pass  # seapie already tracing
+        # seapie already tracing
+        print("Ignoring a breakpoint, seapie is already tracing.")

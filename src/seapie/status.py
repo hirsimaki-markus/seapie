@@ -55,10 +55,19 @@ def get_status(frame, event, arg):
 
     """
     lines = []
+
     # get variables to use in lines
-    sep = " │ "  # This is not the same symbol as |
+    # sep = " │ "  # This is not the same symbol as |
     filename = frame.f_code.co_filename or "None"
     scope = repr(frame.f_code.co_name) or "None"
+
+    # 0 callstack
+    accum = []
+    callstack_frame = frame
+    while callstack_frame:
+        accum.append(callstack_frame.f_code.co_name)
+        callstack_frame = callstack_frame.f_back
+    lines.append(" → ".join(reversed(accum)))
 
     # get lines 1-3
     lines.append(f"file: {repr(filename)}")  # 1
@@ -72,7 +81,7 @@ def get_status(frame, event, arg):
         lines.append("None")
 
     lines.append(  # 3
-        f"lineno: {frame.f_lineno}{sep}scope: {scope}{sep}event: {repr(event)}"
+        f"lineno: {frame.f_lineno}      scope: {scope}      event: {repr(event)}"
     )
 
     # additional stuff for sometimes.

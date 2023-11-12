@@ -1,6 +1,7 @@
 """helper functions that do not belong in other places"""
 
 import os
+import linecache
 from .settings import CURRENT_SETTINGS
 from .version import seapie_ver
 
@@ -128,3 +129,42 @@ def check_rw_access():
         print("No read/write access on version file:", version_file)
         print("Aborting.")
         exit()
+
+
+def inject_magic(current_frame, event, arg):
+    # inject useful variables to the frame. this change should propagate
+    # since we are in trace function. and running 3.12.
+    # this must happen before exec (i think)
+    # otherwise we would need
+    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
+    # maybe. or it works because we are in the trace function.
+    if not CURRENT_SETTINGS["inject_magic"]:
+        return
+
+    current_frame.f_locals["__lineno__"] = current_frame.f_lineno
+
+    current_frame.f_locals["__scope__"] = current_frame.f_code.co_name
+
+    current_frame.f_locals["__event__"] = event
+
+    try:
+        filename = current_frame.f_code.co_filename
+        lineno = current_frame.f_lineno
+        current_line = linecache.getline(filename, lineno)
+        source = current_line.strip()
+    except Exception as e:
+        source = None
+    current_frame.f_locals["__source__"] = source
+
+    if event == "return":
+        current_frame.f_locals["__retval__"] = arg
+    else:
+        current_frame.f_locals["__retval__"] = None
+
+    if event == "exception":
+        current_frame.f_locals["__exception__"] = arg
+    else:
+        current_frame.f_locals["__exception__"] = None
+    # NOTE: THE CONNECTION BETWEEN THESE MAGIC VALUES AND THE STATUS BAR
+    # IS MAINTAINED MANUALLY IN SOURCE. THESE ARE NOT PASSED AS ARGS.
+    # i.e: status bar could use different names and definitions.

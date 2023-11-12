@@ -8,6 +8,7 @@ CURRENT_SETTINGS = {
     "step_until_expression": None,
     "previous_bang": "!help",
     "echo_count": 0,
+    "inject_magic": True,
 }
 
 
@@ -17,4 +18,5 @@ __DEFAULT_SETTINGS__ = {
     "step_until_expression": None,
     "previous_bang": "!help",
     "echo_count": 0,
+    "inject_magic": True,
 }

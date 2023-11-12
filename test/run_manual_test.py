@@ -2,12 +2,12 @@
 
 import importmonkey  # type: ignore  # silence pylance
 
+importmonkey.add_path("../src")
+
+import seapie
+
 
 def main():
-    importmonkey.add_path("../src")
-    import seapie
-    from seapie import prompt
-
     # while True:
     #    print("got:", repr(tools.read_one_interpreter_input()))
 
@@ -19,6 +19,7 @@ def main():
         return "nice"
 
     seapie.prompt()
+
     # 0 / 0
     importmonkey.add_path("../")
 

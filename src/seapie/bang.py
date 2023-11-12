@@ -38,6 +38,9 @@ def bang_handler(user_input, frame, event, arg):
     if user_input in ("!q", "!quit"):
         exit()
     elif user_input in ("!s", "!step"):
+        if CURRENT_SETTINGS["callstack_escape_level"] != 0:
+            CURRENT_SETTINGS["callstack_escape_level"] = 0
+            print("Resetting escape level to 0 before stepping.")
         return "step-with-repl"
     elif user_input in ("!r", "!run"):
         frame.f_trace = None
@@ -52,9 +55,22 @@ def bang_handler(user_input, frame, event, arg):
         return "continue-in-repl"
     elif user_input in ("!b", "!bar"):
         CURRENT_SETTINGS["show_bar"] = not CURRENT_SETTINGS["show_bar"]
+        if CURRENT_SETTINGS["show_bar"]:
+            print("Bar on.")
+        else:
+            print("Bar off.")
+        return "continue-in-repl"
+    elif user_input in ("!m", "!magic"):
+        CURRENT_SETTINGS["inject_magic"] = not CURRENT_SETTINGS["inject_magic"]
+        if CURRENT_SETTINGS["inject_magic"]:
+            print("Magic injection on.")
+        else:
+            print(
+                "Magic injection off. Already injected variables remain in global/local scopes but won't update."
+            )
         return "continue-in-repl"
     elif user_input in ("!i", "!info"):
-        print(get_status(frame, event, arg))
+        print("\n".join(get_status(frame, event, arg)))
         return "continue-in-repl"
     elif user_input in ("!w", "!where"):
         print_source_lines(frame)
@@ -74,6 +90,9 @@ def bang_handler(user_input, frame, event, arg):
         do_goto(frame, original_input)
         return "continue-in-repl"
     elif user_input.startswith("!c") or user_input.startswith("!condition"):
+        if CURRENT_SETTINGS["callstack_escape_level"] != 0:
+            CURRENT_SETTINGS["callstack_escape_level"] = 0
+            print("Resetting escape level to 0 before setting condition.")
         returnvalue = step_condition(original_input)
         return returnvalue
     elif user_input.startswith("!p") or user_input.startswith("!pickle"):
@@ -171,16 +190,20 @@ def print_source_lines(frame):
     reset_color = "\x1b[0m"
 
     max_lineno_width = len(str(len(lines)))
+    if max_lineno_width < 6:
+        max_lineno_width = 6  # the string ' Next' is 5 character
 
     for lineno, line in enumerate(lines, start=1):
         line = line[:-1]  # Remove trailing newline with -1
-        line_prefix = "-->" if lineno == current_lineno else "   "
         linenum = str(lineno).rjust(max_lineno_width)  # right aling lineno
         if abs(lineno - current_lineno) <= 10:  # show +- 10 lines.
-            out = f"{invert_color}{linenum}{reset_color} {line_prefix}{line}"
+            if lineno != current_lineno:
+                out = f"{linenum} {line}"
+            else:
+                out = f"{invert_color}{' Next '.rjust(max_lineno_width)}{reset_color} {line}"
             # invert color and reset color lenghts are added to width since
             # they are invisible and dont actually take up space
-            out = out[: width + len(invert_color) + len(reset_color)]
+            out = out[:width]
 
             print(out)
 
@@ -271,7 +294,7 @@ def step_condition(user_input):
         CURRENT_SETTINGS["step_until_expression"] = user_expression
         print(
             f"Stepping until 'bool(eval({repr(user_expression)}))' is True in"
-            " active frame. Escape level is ignored. All errors are ignored."
+            " active frame. All errors are ignored."
         )
         return "step-with-repl"
     else:
