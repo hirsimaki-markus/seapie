@@ -1,5 +1,4 @@
 import socket
-import sys
 import atexit
 import base64
 
@@ -51,9 +50,9 @@ def socket_send_message(message):
     client_socket.sendall(b64_message.encode())
 
 
-# disable nagle algorithm to prefer many small packets over fewer larger packats.
-# this makes holding down enter in input prompt less likely to cause
-# artifacts.
+# disable nagle algorithm to prefer many small packets over fewer
+# larger packats. this makes holding down enter in input prompt less
+# likely to cause artifacts arising from buffering
 client_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
 # Client loop

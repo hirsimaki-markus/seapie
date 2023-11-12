@@ -65,9 +65,12 @@ def bang_handler(user_input, frame, event, arg):
         if CURRENT_SETTINGS["inject_magic"]:
             print("Magic injection on.")
         else:
-            print(
-                "Magic injection off. Already injected variables remain in global/local scopes but won't update."
+            # todo: tee tästä funktio ja ylipäänsä muut tässä filessä
+            msg = (
+                "Magic injection off. Already injected variables remain in"
+                " global/local scopes but won't update."
             )
+            print(msg)
         return "continue-in-repl"
     elif user_input in ("!i", "!info"):
         print("\n".join(get_status(frame, event, arg)))
@@ -335,40 +338,40 @@ def pickle_object(frame, user_input):
         print(f"Invalid bang {user_input}")
         return
     if len(command_parts) == 2:
-        object_name = command_parts[1]
+        obj_name = command_parts[1]
     else:
         print("Missing object name. Use: !p my_object or !pickle my_object")
         return
 
-    file_name = f"{object_name.split('.')[-1]}"
+    file_name = f"{obj_name.split('.')[-1]}"
 
     pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
 
     file_path = os.path.join(pickles_dir, file_name)
 
-    for part in object_name.split("."):  # Allow dots in name by splitting.
+    for part in obj_name.split("."):  # Allow dots in name by splitting.
         if not part.isidentifier():
             print(
-                f"{repr(object_name)} is not a valid identifier. Do not use"
+                f"{repr(obj_name)} is not a valid identifier. Do not use"
                 ' literals like "!p \'hello\'" or calls like "!p print()".'
                 ' Use "!p hello" or "!p print" instead to refer to an object.'
             )
             return
 
     try:
-        object_ref = eval(object_name, frame.f_globals, frame.f_locals)
+        object_ref = eval(obj_name, frame.f_globals, frame.f_locals)
     except Exception as e:
-        print(f"Error evaluating object {repr(object_name)}: {e}")
+        print(f"Error evaluating object {repr(obj_name)}: {e}")
         return
 
     try:
         with open(file_path, "wb") as file:
             pickle.dump(object_ref, file, protocol=4)
     except Exception as e:
-        print(f"Error pickling object {repr(object_name)}: {e}")
+        print(f"Error pickling object {repr(obj_name)}: {e}")
         return
 
-    print(f"Object {repr(object_name)} pickled and saved as {repr(file_path)}.")
+    print(f"Object {repr(obj_name)} pickled and saved as {repr(file_path)}.")
 
 
 def unpickle_object(frame, user_input):

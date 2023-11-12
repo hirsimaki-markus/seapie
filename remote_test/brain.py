@@ -25,19 +25,27 @@ def patch_print_and_input():
 
     # Patch print to write to the socket
     def socket_print(
-        *objects, sep=" ", end="\n", file=None, flush=True, __request_input__=False
+        *objects, sep=" ", end="\n", file=None, flush=True, __input_req__=False
     ):
         """uses a signature that matches print function so it can patch
         built in print.
 
-        Additional "secret" parameter __request_input__ is used to signify that a packet
-        should be sent to dumb client to provide an input
+        Additional "secret" parameter __input_req__ is used to signify that
+        a packet should be sent to dumb client to provide an input
+
+        the flus argument is ignored always except if someone is printing to
+        a file
+
+        # todo: dokumentoi tarkkaan miten patch toimii
+
+        if file argument is provided, the printing wont happen into a socket
         """
-        if flush is not True:
-            raise ValueError("Socket printing will always flush immediately.")
 
         if file is not None:
-            raise ValueError("Socket printing can not use a specific file.")
+            # Soeone is trying to print to a specific file. Lets print to
+            # there instead
+            builtins.__print__(*objects, sep, end, file, flush)
+            return
 
         message = sep.join(str(obj) for obj in objects) + end
 
@@ -45,7 +53,7 @@ def patch_print_and_input():
         b64_message += "\n"  # We use a newline as an end of message.
         # It cant occur in the b64 so its safe to use.
 
-        if __request_input__:  # tell the client that the print should be
+        if __input_req__:  # tell the client that the print should be
             # used for input instead
             b64_message = "@" + b64_message
 
@@ -53,7 +61,7 @@ def patch_print_and_input():
 
     def socket_input(prompt):
         socket_print(
-            prompt, end="", __request_input__=True
+            prompt, end="", __input_req__=True
         )  # input does not put newline when reading
 
         # receive a packet
@@ -66,9 +74,9 @@ def patch_print_and_input():
             buffer += data
         # print("received input", buffer.decode('utf-8'))
 
-        # disable nagle algorithm to prefer many small packets over fewer larger packats.
-        # this makes holding down enter in input prompt less likely to cause
-        # artifacts.
+        # disable nagle algorithm to prefer many small packets over fewer
+        # larger packats. this makes holding down enter in input prompt less
+        # likely to cause artifacts arising from buffering
         return base64.b64decode(buffer).decode(
             "utf-8"
         )  # Assuming the text is in UTF-8 encoding
@@ -96,5 +104,5 @@ while True:
 # packet structure: [@][base64][\n]
 # newline is end of message, we always read until newline.
 # base64 will never contain an newline or @ so they are safe to use.
-# the optional starting @ signifies that that the print should be used for input
-# instead of printing.
+# the optional starting @ signifies that that the print should be used fo
+# input instead of printing.
