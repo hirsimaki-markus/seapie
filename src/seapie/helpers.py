@@ -45,6 +45,7 @@ def should_auto_step(frame):
         return False
     else:
         if result:
+            CURRENT_SETTINGS["step_until_expression"] = None
             return False  # can stop stepping
         else:
             return True
