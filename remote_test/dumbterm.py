@@ -1,7 +1,6 @@
-import socket
 import atexit
 import base64
-
+import socket
 
 # Create a client socket and connect to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

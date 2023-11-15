@@ -1,4 +1,6 @@
 koneen todo loppuun
+getchistä paketti githubiin?
+tee sittenkin oma input koska historia?
 
 
 # beginner friendly debugger with advanced stepping features and remote debugging support
@@ -15,7 +17,7 @@ remote notes:
     koko trace kutsu pitää ignoree jos ei oo eka connection. mieti jos callback toistuu.
 
 
-getchistä paketti githubiin?
+
 
 
 description = 'Seapie is easy to use python debugger',
@@ -70,9 +72,7 @@ minimi version on missä tuli walrus eli 3.8
 
 mieti mitä kaikea kannattaa paljastaa seapien sisältä. funktiot ei toimi yksin. pääosin ei kannata paljastaa mitään.
 
-kerro sonjalle seapie. jounille sama.
-
-todo: continue-in-repl ja ne muut paremmiksi
+kerro sonjalle seapie. jounille sama. myös topias ja anssi ja olli ja glukosi ja patrik
 
 dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
 
@@ -83,7 +83,6 @@ dokumentoi varoitus että !c voi tehdä side efektejä
 
 
 
-tee sittenkin oma input koska historia?
 
 
 
@@ -148,3 +147,22 @@ nyt tärkee dokumentaatio kuntoon ja siivous sekä remote debug
 manuaali testaa jokainen rivi jos vain mahdollista ennen releasea. huh huh.
 
 retval ja exception vois kans ehkä olla status baarissa? ehkä vikalla rivillä?
+- ehkä vaikka että jos ei oo none niin näytetään?
+
+
+
+PITÄISIKÖ STATUS BAARIN LUKEA TAIKAMUUTTUJAT SUORAAN??????????????
+mutta sitten jos !m pois päältä niin ne ei edes näy kyllä että meh. tarviiko ne paremmat nimet?
+
+
+pitäiskö ternary return replissä korvata lambda + nonella? none looppaa ja lambda palautetaan?
+törmääkö lambda circular impporttiin?
+
+
+piilota kaikki käyttäjältä paitsi prompt().
+älä anna repl exec tarjolla vaan mieluummin vanhasta versiota true_exec tarjolle.
+
+
+
+# jos hyppää sille riville missä seapie lähtee tai jos kaks peräkkäin niin tracettaa itseään koko prompt()
+kutsun läpi. trace functkion pitäis tunnistaa ongelma.

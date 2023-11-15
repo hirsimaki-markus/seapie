@@ -1,7 +1,8 @@
 """helper functions that do not belong in other places"""
 
-import os
 import linecache
+import os
+
 from .settings import CURRENT_SETTINGS
 from .version import seapie_ver
 

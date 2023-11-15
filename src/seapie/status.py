@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import os
 import linecache
+import os
+
 from .settings import CURRENT_SETTINGS
 
 

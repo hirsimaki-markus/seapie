@@ -3,22 +3,22 @@
 """Docstring"""
 
 import codeop
-import sys
-import inspect
 import ctypes
-from .version import seapie_ver
-from .status import update_status_bar
+import inspect
+import sys
+
+from .bang import bang_handler, do_tb
 from .helpers import (
+    check_rw_access,
     escape_frame,
+    init_seapie_directory,
     should_auto_step,
     should_simulate_user_input,
-    init_seapie_directory,
-    check_rw_access,
     update_magic_variables,
 )
-from .bang import bang_handler, do_tb
-from .settings import CURRENT_SETTINGS, __DEFAULT_SETTINGS__
-
+from .settings import __DEFAULT_SETTINGS__, CURRENT_SETTINGS
+from .status import update_status_bar
+from .version import seapie_ver
 
 # These can be set to anything
 PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
@@ -130,12 +130,21 @@ def repl_exec(frame, source):
     interactive interpreter would
     """
     # todo: miksi str ja single
-    compiled_code = codeop.compile_command(source, "<string>", "single")
+
+    try:
+        compiled_code = codeop.compile_command(source, "<string>", "single")
+        exec(compiled_code, frame.f_globals, frame.f_locals)
+    except SystemExit:  # Separate exit before catching base exception.
+        exit()
+    except BaseException:
+        do_tb(frame, num_frames_to_hide=2)
+        # Seapie occupies 3 frames here.
+        # the frames are repl-exec, <string> from exec()
+
     # nää asetukset saa execin toimimaan ja myös prittaamaan niinkuin repl
 
     # dont save compiled to code as compilation failed. code remains str
 
-    exec(compiled_code, frame.f_globals, frame.f_locals)
     # This c lvel calls allows use to arbitarily change the variables in the
     # frame including introducing new ones.
     # todo: dokumentoi magic constant c_int 1
@@ -154,7 +163,10 @@ def repl_exec(frame, source):
 
     # this block is also required so that the repl can properly overwrite
     # stuff like function definitions
-    ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),ctypes.c_int(1))
+    ctypes.pythonapi.PyFrame_LocalsToFast(
+        ctypes.py_object(frame),
+        ctypes.c_int(1)
+    )
 
 
 def repl_print():
@@ -173,6 +185,9 @@ def repl_loop(frame, event, arg):
     always returns repl_loop itself so it will be used for both local and
     global tracing. under the hood the return value is ignored or used to set
     local trace function depending on the event.
+
+    the input and exec both have their own error handling so this main loop
+    does not need error handling
     """
 
     # Unhandled exception happened in orginal source code
@@ -198,32 +213,18 @@ def repl_loop(frame, event, arg):
 
         if inp := should_simulate_user_input():
             user_input = inp
-            # print(PS1, user_input)
         else:
             user_input = repl_input(current_frame)
 
         if user_input.startswith("!"):
-            should_step = bang_handler(user_input, current_frame, event, arg)
-            if should_step == "step-with-repl":  # step source, reopen repl
+            # if "should step" step by returning new trace func
+            if bang_handler(user_input, current_frame, event, arg):
                 return repl_loop
-            elif should_step == "step-without-repl":  # step source, disabe trace
-                return None
-            elif should_step == "continue-in-repl":  # no step, continue this repl
+            else:
                 continue
         else:
-            # got code.
-            try:
-                repl_exec(current_frame, user_input)
-            except SystemExit:  # Separate exit before catching base exception.
-                exit()
-            except BaseException:
-                do_tb(
-                    current_frame, num_frames_to_hide=3
-                )  # Seapie occupies 3 frames here.
-                # the frames are repl-loop, repl-exec, <string> from exec()
-                continue
+            repl_exec(current_frame, user_input)
 
-        # loop
 
 
 def prompt():

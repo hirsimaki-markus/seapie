@@ -1,7 +1,7 @@
-import socket
 import atexit
-import builtins
 import base64
+import builtins
+import socket
 
 
 def patch_print_and_input():

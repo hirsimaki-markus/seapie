@@ -3,12 +3,12 @@ bang handler stuff and related tools
 """
 
 import os
+import pickle
 import sys
 import traceback
-import pickle
+
 from .settings import CURRENT_SETTINGS
-from .status import get_status
-from .status import print_pickles
+from .status import get_status, print_pickles
 
 
 def bang_handler(user_input, frame, event, arg):
@@ -21,10 +21,12 @@ def bang_handler(user_input, frame, event, arg):
     possible actions and return values:
     * exit() happens
     * step-with-repl; repl should return itself as the new trace func
-    * continue-in-repl; repl loop should "continue" in while and read new input
-    * step-without-repl
 
     input is case sensitive because !condition has to be case sensitive
+
+
+    returns true if the code should step
+    false if code should not step
     """
     original_input = user_input  # needed as arg for bangs that take args
     user_input = user_input.lower()
@@ -86,18 +88,6 @@ def do_tb(frame, num_frames_to_hide):
     """
     exc_type, exc_val, exc_tb = sys.exc_info()  # Get the traceback
 
-    # if (exc_type, exc_val, exc_tb) == (None, None, None):
-    #    # print_tb was called when there is no exception, use stack instead.
-    #    # all frames can be found here when there is not exception going on.
-    #    tb_frames = traceback.extract_stack()
-    # else:
-    #    # Extract the traceback frames from the exception object because
-    #    # there is an exception going on and we need all frames available
-    #    tb_frames = traceback.extract_tb(exc_tb)
-
-    # need to use extract stack to include all frames in stack
-    # tb_frames = traceback.extract_stack()
-
     traceback_exc = traceback.TracebackException(*sys.exc_info())
 
     # seapie would be present here so we hide it from the middle of the stack
@@ -124,7 +114,7 @@ def do_tb(frame, num_frames_to_hide):
     if exc_type is not None and exc_val is not None:
         print(f"{exc_type.__name__}: {exc_val}")
 
-    return "continue-in-repl"
+    return False
 
 
 def do_frame(frame):
@@ -143,7 +133,7 @@ def do_frame(frame):
         " or memory leaks when you are done with the frame. Use !up to go to"
         " root frame and !down to get back where you were."
     )
-    return "continue-in-repl"
+    return False
 
 
 def do_goto(frame, user_input):
@@ -151,26 +141,26 @@ def do_goto(frame, user_input):
     command_parts = user_input.split(" ")
     if command_parts[0].lower() not in ("!g", "!goto"):
         print(f"Invalid bang {user_input}")
-        return "continue-in-repl"
+        return False
     if len(command_parts) == 2:
         line_number_str = command_parts[1]
         if line_number_str.isdigit():
             line_number = int(line_number_str)
         else:
             print("Invalid line number. Use: !g 123 or !goto 123")
-            return "continue-in-repl"
+            return False
     else:
         print("Invalid line number. Use: !g 123 or !goto 123")
-        return "continue-in-repl"
+        return False
 
     try:
         frame.f_lineno = line_number
     except Exception as e:
         print("Goto failed:", str(e))
-        return "continue-in-repl"
+        return False
     else:
         print("Goto succeeded. Next line to execute is", line_number)
-        return "continue-in-repl"
+        return False
 
 
 def do_condition(user_input):
@@ -181,14 +171,14 @@ def do_condition(user_input):
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!c", "!condition"):
         print(f"Invalid bang {user_input}")
-        return "continue-in-repl"
+        return False
     if len(command_parts) == 2:
         user_expression = command_parts[1]
         try:
             eval(user_expression)
         except SyntaxError:
             print("SyntaxError. Ignoring the step condition.")
-            return "continue-in-repl"
+            return False
         # Ignore all other errors. We only warn for syntax error.
         except Exception:
             pass
@@ -198,27 +188,27 @@ def do_condition(user_input):
             f"Stepping until 'bool(eval({repr(user_expression)}))' is True in"
             " active frame. All errors are ignored."
         )
-        return "step-with-repl"
+        return True
     else:
         print("Missing expression. Use: !c x==0 or !condition x==0")
-        return "continue-in-repl"
+        return False
 
 
 def do_echo(user_input):
     command_parts = user_input.split(" ")
     if command_parts[0].lower() not in ("!e", "!echo"):
         print(f"Invalid bang {user_input}")
-        return "continue-in-repl"
+        return False
     if len(command_parts) == 2:
         echo_count_str = command_parts[1]
         if echo_count_str.isdigit():
             echo_count = int(echo_count_str)
         else:
             print("Invalid echo count. Use: !e 3 or !echo 3")
-            return "continue-in-repl"
+            return False
     else:
         print("Invalid echo count. Use: !e 3 or !echo 3")
-        return "continue-in-repl"
+        return False
     CURRENT_SETTINGS["echo_count"] = echo_count
     print("Repeating previous bang", echo_count, "times.")
 
@@ -234,12 +224,12 @@ def do_picle(frame, user_input):
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!p", "!pickle"):
         print(f"Invalid bang {user_input}")
-        return "continue-in-repl"
+        return False
     if len(command_parts) == 2:
         obj_name = command_parts[1]
     else:
         print("Missing object name. Use: !p my_object or !pickle my_object")
-        return "continue-in-repl"
+        return False
 
     file_name = f"{obj_name.split('.')[-1]}"
 
@@ -254,23 +244,23 @@ def do_picle(frame, user_input):
                 ' literals like "!p \'hello\'" or calls like "!p print()".'
                 ' Use "!p hello" or "!p print" instead to refer to an object.'
             )
-            return "continue-in-repl"
+            return False
 
     try:
         object_ref = eval(obj_name, frame.f_globals, frame.f_locals)
     except Exception as e:
         print(f"Error evaluating object {repr(obj_name)}: {e}")
-        return "continue-in-repl"
+        return False
 
     try:
         with open(file_path, "wb") as file:
             pickle.dump(object_ref, file, protocol=4)
     except Exception as e:
         print(f"Error pickling object {repr(obj_name)}: {e}")
-        return "continue-in-repl"
+        return False
 
     print(f"Object {repr(obj_name)} pickled and saved as {repr(file_path)}.")
-    return "continue-in-repl"
+    return False
 
 
 def do_unpickle(frame, user_input):
@@ -279,7 +269,7 @@ def do_unpickle(frame, user_input):
     command_parts = user_input.split(" ", 1)
     if command_parts[0].lower() not in ("!l", "!load"):
         print(f"Invalid bang {user_input}")
-        return "continue-in-repl"
+        return False
     if len(command_parts) == 2:
         obj_name = command_parts[1]
     else:
@@ -287,7 +277,7 @@ def do_unpickle(frame, user_input):
         print()
         print_pickles()
         print()
-        return "continue-in-repl"
+        return False
 
     file_name = f"{obj_name.split('.')[-1]}"
     pickles_dir = os.path.join(os.path.expanduser("~"), ".seapie", "pickles")
@@ -295,24 +285,24 @@ def do_unpickle(frame, user_input):
 
     if not obj_name.isidentifier():
         print(f"{repr(obj_name)} is not a valid identifier.")
-        return "continue-in-repl"
+        return False
 
     try:
         with open(file_path, "rb") as file:
             object_ref = pickle.load(file)
     except Exception as e:
         print(f"Error loading pickle file {repr(file_path)}: {e}")
-        return "continue-in-repl"
+        return False
 
     frame.f_locals[obj_name] = object_ref
 
     print(f"{repr(obj_name)} loaded into active frame from {repr(file_path)}.")
-    return "continue-in-repl"
+    return False
 
 
 def do_help():
     print("nice")
-    return "continue-in-repl"
+    return False
 
 
 def do_magic():
@@ -326,14 +316,14 @@ def do_magic():
             " global/local scopes but won't update."
         )
         print(msg)
-    return "continue-in-repl"
+    return False
 
 
 def do_step():
     if CURRENT_SETTINGS["callstack_escape_level"] != 0:
         CURRENT_SETTINGS["callstack_escape_level"] = 0
         print("Resetting escape level to 0 before stepping.")
-    return "step-with-repl"
+    return True
 
 
 def do_quit():
@@ -341,9 +331,10 @@ def do_quit():
 
 
 def do_run(frame):
+    """Returning the"""
     frame.f_trace = None
     sys.settrace(None)
-    return "step-without-repl"
+    return True
 
 
 def do_bar():
@@ -352,12 +343,12 @@ def do_bar():
         print("Bar on.")
     else:
         print("Bar off.")
-    return "continue-in-repl"
+    return False
 
 
 def do_info(frame, event, arg):
     print("\n".join(get_status(frame, event, arg)))
-    return "continue-in-repl"
+    return False
 
 
 def do_where(frame):
@@ -375,14 +366,14 @@ def do_where(frame):
 
     if filename is None:
         print("Unable to retrieve the current filename.")
-        return "continue-in-repl"
+        return False
 
     try:
         with open(filename, "r") as file:
             lines = file.readlines()
     except OSError as e:
         print(f"Error opening file: {e}")
-        return "continue-in-repl"
+        return False
 
     invert_color = "\x1b[7m"
     reset_color = "\x1b[0m"
@@ -407,7 +398,7 @@ def do_where(frame):
             out = out[:width]
 
             print(out)
-    return "continue-in-repl"
+    return False
 
 
 def do_up():
@@ -415,9 +406,9 @@ def do_up():
     print(
         "Setting escape level to"
         f" {CURRENT_SETTINGS['callstack_escape_level']}."
-        " Check status bar for current frame of this prompt."
+        " Check status bar to see in which frame you are."
     )
-    return "continue-in-repl"
+    return False
 
 
 def do_down():
@@ -431,9 +422,9 @@ def do_down():
             f" {CURRENT_SETTINGS['callstack_escape_level']}."
             " Check status bar for current frame of this prompt."
         )
-    return "continue-in-repl"
+    return False
 
 
 def do_invalid(original_input):
     print(f"Invalid bang {repr(original_input)}")
-    return "continue-in-repl"
+    return False

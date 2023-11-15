@@ -9,19 +9,15 @@ a state stored in settings.py
 
 
 """
+from .repl import prompt, repl_exec
 from .version import seapie_ver
-from .repl import repl_input, repl_exec, repl_print, repl_loop, prompt
-
 
 __version__ = seapie_ver
 __author__ = "Markus Hirsimäki"
 __copyright__ = "This work is dedicated to public domain under The Unlicense."
 __license__ = "The Unlicense (https://choosealicense.com/licenses/unlicense/)"
 __all__ = [
-    "repl_input",  # Part of actual repl.
     "repl_exec",  # Part of actual repl.
-    "repl_print",  # Part of actual repl.
-    "repl_loop",  # Part of actual repl.
     "prompt",  # Breakpoint to trigger repl.
     "seapie",  # Backwards compatibility alias.
     "Seapie",  # Backwards compatibility alias.
