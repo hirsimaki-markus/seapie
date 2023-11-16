@@ -10,9 +10,9 @@ a state stored in settings.py
 
 """
 from .repl import prompt, repl_exec
-from .version import seapie_ver
+from .version import ver
 
-__version__ = seapie_ver
+__version__ = ver
 __author__ = "Markus Hirsimäki"
 __copyright__ = "This work is dedicated to public domain under The Unlicense."
 __license__ = "The Unlicense (https://choosealicense.com/licenses/unlicense/)"

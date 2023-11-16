@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
-"""Docstring"""
+"""the only function you should use from here is prompt.
+
+there is global state and everything is monolitchic to simplify the structure
+of the debugger; the amount of argument passing is reduced and there is no
+need for a class. The top priority was to simlify prompt() and repl_loop()
+
+dokumentoi mihin tarkoitukseen seapie directory on
+"""
 
 import codeop
 import ctypes
@@ -11,21 +18,23 @@ from .bang import bang_handler, do_tb
 from .helpers import (
     check_rw_access,
     escape_frame,
-    init_seapie_directory,
-    should_auto_step,
-    should_simulate_user_input,
-    update_magic_variables,
+    init_seapie_dir_and_reset_state,
+    print_start_banner,
+    step_until_condition,
+    update_magic_vars,
 )
-from .settings import __DEFAULT_SETTINGS__, CURRENT_SETTINGS
+from .state import __STATE__, STATE
 from .status import update_status_bar
-from .version import seapie_ver
+from .version import ver
+
+LIPPU = False
 
 # These can be set to anything
 PS1 = ">>> "  # Allows customizing sys.ps1 equivalent for seapie.
 PS2 = "... "  # Allows customizing sys.ps2 equivalent for seapie.
 
 
-def repl_input(frame):
+def get_repl_input(frame):
     """Fake python repl until we can return meaningful code.
     ja voi antaa keybardintteruptin tai eof errorin valua esiin
     tämö funktio lupaa palauttaa jotain, mutta se jokin voi nostaa herjan
@@ -64,6 +73,11 @@ def repl_input(frame):
     this function prints tracebacks instead of raising to make repl loop
     cleaner
     """
+
+    # Check if previous bang should be echoed instead of reading te user input.
+    if STATE["echo_count"] > 0:
+        STATE["echo_count"] -= 1
+        return STATE["previous_bang"]
 
     # Readline is required on systems where it is available to make the input
     # behave properly when using non-printable key presses like arrow keys.
@@ -137,140 +151,82 @@ def repl_exec(frame, source):
     except SystemExit:  # Separate exit before catching base exception.
         exit()
     except BaseException:
-        do_tb(frame, num_frames_to_hide=2)
-        # Seapie occupies 3 frames here.
+        # Seapie occupies 2 frames here.
         # the frames are repl-exec, <string> from exec()
+        do_tb(frame, num_frames_to_hide=2)
 
-    # nää asetukset saa execin toimimaan ja myös prittaamaan niinkuin repl
-
-    # dont save compiled to code as compilation failed. code remains str
-
-    # This c lvel calls allows use to arbitarily change the variables in the
-    # frame including introducing new ones.
-    # todo: dokumentoi magic constant c_int 1
     # the magic value 1 tells the function to clear local variables so that
     # the changes are found when referring to variable as x instead of only
     # frame.x
 
-    # this block is not needed for the current implementation and is retained
-    # for backwards compability with earlier version of this function.
-    # this might later be deprecated.
-    # this might not be needed since we are in trace func?
-    # c_frame = ctypes.py_object(frame)
-    # c_int1 = ctypes.c_int(1)
-    # ctypes.pythonapi.PyFrame_LocalsToFast(c_frame, c_int1)
-    # 1 stands for the ability to propagate removal of values
-
-    # this block is also required so that the repl can properly overwrite
-    # stuff like function definitions
-    ctypes.pythonapi.PyFrame_LocalsToFast(
-        ctypes.py_object(frame),
-        ctypes.c_int(1)
-    )
-
-
-def repl_print():
-    """Poista tää kaikista importeista myös"""
-    pass
+    # This call allows seapie to overwrite stuff like functions in source.
+    ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), ctypes.c_int(1))
 
 
 def repl_loop(frame, event, arg):
     """read-evaluate-print-loop that gets called when tracing code. this
     basically gets run between evey line
 
-    * repl_input
-    * repl_exec # also does printing if necessary
-    * loop back to start in while true
+    if returning something else than none, always returns repl_loop itself so
+    it will be used for both local and global trace func
 
-    always returns repl_loop itself so it will be used for both local and
-    global tracing. under the hood the return value is ignored or used to set
+
+    under the hood the return value is ignored or used to set
     local trace function depending on the event.
 
     the input and exec both have their own error handling so this main loop
     does not need error handling
+
+    this function is essentially called between every source line
+
+    most parts of this function use the global settings.
     """
 
-    # Unhandled exception happened in orginal source code
-    # guard tracing into error handling mechanism
-    # stop tracing on exception. there is no use in tracing the
-    # internal error handling logic.
-    if hasattr(sys, "last_traceback"):
-        frame.f_trace = None
-        sys.settrace(None)
-        return
+    if hasattr(sys, "last_traceback"):  # Unhandled error in original source.
+        return  # Don't return trace func to not trace Python's error handling.
 
-    # make event and line always available
+    if frame.f_globals.get("prompt") is prompt:  # Dont trace new prompt calls.
+        return  # Not returning a local trace function to skip seapie's frame.
 
-    while True:
+    while True:  # This is the main repl (>>> ... ... ...) loop.
         current_frame = escape_frame(frame)  # Escape frame based on settings.
 
-        update_magic_variables(current_frame, event, arg)
+        update_magic_vars(current_frame, event, arg)  # Uses global settings.
+        update_status_bar(current_frame, event, arg)  # Uses global settings.
 
-        update_status_bar(current_frame, event, arg)
-
-        if should_auto_step(frame):  # This ignores escape level
+        if step_until_condition(frame):  # Note: frame, not current_frame.
             return repl_loop
 
-        if inp := should_simulate_user_input():
-            user_input = inp
-        else:
-            user_input = repl_input(current_frame)
-
-        if user_input.startswith("!"):
-            # if "should step" step by returning new trace func
+        if (user_input := get_repl_input(current_frame)).startswith("!"):
             if bang_handler(user_input, current_frame, event, arg):
                 return repl_loop
-            else:
-                continue
-        else:
-            repl_exec(current_frame, user_input)
+            continue
 
+        repl_exec(current_frame, user_input)  # All guard clauses passed; exec.
 
 
 def prompt():
     """
+    set_trace function
+
     the name might be confusing . this function is not the prompt itself but
     sets the system trace function >repl_loop< which acts like the prompt when
     set as the trace function.
 
     starts traving if trace func is none. if trace func is repl_llop
     this call does nothing. if trace func is something else raise.
+
+    if not tracing:
+       banner,
+       init,
+       Set trace function for active frame and then for all future frames.
     """
     if (trace := sys.gettrace()) is None:
-        pyver = (
-            f"{sys.version_info.major}."
-            f"{sys.version_info.minor}."
-            f"{sys.version_info.micro}"
-        )
-        msg = (
-            f"Stopped on breakpoint. Seapie {seapie_ver} running on"
-            f" Python {pyver} on {sys.platform}."
-        )
-        print(msg)
-        print("Type '!help' for help. See status bar at the top for info.")
-        # reset settings on restart.
-        CURRENT_SETTINGS.update(__DEFAULT_SETTINGS__)
-        init_seapie_directory()
-        check_rw_access()
-
-        # sys._getframe(1).f_trace = repl_loop
-        # inspect.currentframe().f_trace = repl_loop
+        print_start_banner()
+        init_seapie_dir_and_reset_state()
         inspect.currentframe().f_back.f_trace = repl_loop
-        sys.settrace(repl_loop)  # Tracing would start on next traceable event.
-
-        # Start tracing now instead.
-
-        # Any line in this function that happens after setting the trace will
-        # run only after returning from tracing with !r
-        # print(inspect.currentframe().f_back.f_code.co_name)
-        # print(sys._getframe(1).f_code.co_name)
-
+        sys.settrace(repl_loop)
     elif trace is not repl_loop:
-        msg = (
-            "Trace function was already set by some other tool. Use"
-            " sys.gettrace() or sys.settrace(None) to inspect or clear it."
-        )
-        raise RuntimeError(msg)
+        raise RuntimeError(f"Another trace function already set: {trace}")
     else:
-        # seapie already tracing
-        print("Ignoring a breakpoint, seapie is already tracing.")
+        print("Ignoring call to prompt() because seapie is already tracing.")

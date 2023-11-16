@@ -3,7 +3,7 @@
 import linecache
 import os
 
-from .settings import CURRENT_SETTINGS
+from .state import STATE
 
 
 def update_status_bar(current_frame, event, arg):
@@ -16,7 +16,7 @@ def update_status_bar(current_frame, event, arg):
 
     only prints the bar if current settings allow it.
     """
-    if not CURRENT_SETTINGS["show_bar"]:
+    if not STATE["show_bar"]:
         return
 
     status_lines = get_status(current_frame, event, arg)

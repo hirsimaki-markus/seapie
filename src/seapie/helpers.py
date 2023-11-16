@@ -2,9 +2,10 @@
 
 import linecache
 import os
+import sys
 
-from .settings import CURRENT_SETTINGS
-from .version import seapie_ver
+from .state import __STATE__, STATE
+from .version import ver
 
 
 def escape_frame(frame):
@@ -13,14 +14,14 @@ def escape_frame(frame):
     returns the "active" frame. ehkä nimeä tänne active frame?
     """
     # original_frame = frame
-    for _ in range(CURRENT_SETTINGS["callstack_escape_level"]):
+    for _ in range(STATE["callstack_escape_level"]):
         if frame.f_back is None:  # Check if end of stack reached
             # frame = original_frame
-            CURRENT_SETTINGS["callstack_escape_level"] -= 1
+            STATE["callstack_escape_level"] -= 1
             print(
                 "Callstack was too short for new escape level. Decrementing"
                 " level by one. Level is now"
-                f" {CURRENT_SETTINGS['callstack_escape_level']}."
+                f" {STATE['callstack_escape_level']}."
             )
             # break
         else:
@@ -28,9 +29,9 @@ def escape_frame(frame):
     return frame
 
 
-def should_auto_step(frame):
+def step_until_condition(frame):
     """Automatically steps if current settings have an expression to check"""
-    user_expression = CURRENT_SETTINGS["step_until_expression"]
+    user_expression = STATE["step_until_expression"]
     if user_expression is None:  # no need to step. no expression set.
         return False
     try:
@@ -42,65 +43,14 @@ def should_auto_step(frame):
             "Conditional step failed with unexpected error:"
             f" {str(e)}. Clearing the expression."
         )
-        CURRENT_SETTINGS["step_until_expression"] = None
+        STATE["step_until_expression"] = None
         return False
     else:
         if result:
-            CURRENT_SETTINGS["step_until_expression"] = None
+            STATE["step_until_expression"] = None
             return False  # can stop stepping
         else:
             return True
-
-
-def should_simulate_user_input():
-    """Returns empty string for false. Non empty string if should
-    simulate."""
-    if CURRENT_SETTINGS["echo_count"] > 0:
-        CURRENT_SETTINGS["echo_count"] -= 1
-        return CURRENT_SETTINGS["previous_bang"]
-    else:
-        return ""
-
-
-def init_seapie_directory():
-    """Creates"""
-    path = os.path.expanduser("~")  # Get the writable path
-
-    # Create the .seapie directory if it doesn't exist
-    seapie_dir = os.path.join(path, ".seapie")
-    if not os.path.exists(seapie_dir):
-        try:
-            os.makedirs(seapie_dir)
-        except OSError as e:
-            print(f"Error creating .seapie directory: {e}")
-            return
-        else:
-            print("Initialized .seapie directory in", path)
-
-    # Create the pickles, history, and snippets directories if they don't exist
-    subdirectories = ["pickles", "history", "snippets"]
-    for subdir in subdirectories:
-        subdir_path = os.path.join(seapie_dir, subdir)
-        if not os.path.exists(subdir_path):
-            try:
-                os.makedirs(subdir_path)
-            except OSError as e:
-                print(f"Error creating {subdir} directory: {e}")
-                return
-            else:
-                print("Initialized .seapie subdirectory in", subdir_path)
-
-    # Create the version file in the .seapie directory
-    version_file = os.path.join(seapie_dir, "version")
-    if not os.path.exists(version_file):
-        try:
-            with open(version_file, "w") as f:
-                f.write(seapie_ver)
-        except OSError as e:
-            print(f"Error creating version file: {e}")
-            return
-        else:
-            print("Initialized .seapie version file in", version_file)
 
 
 def check_rw_access():
@@ -133,7 +83,57 @@ def check_rw_access():
         exit()
 
 
-def update_magic_variables(current_frame, event, arg):
+def create_seapie_dir():
+    """Creates"""
+    path = os.path.expanduser("~")  # Get the writable path
+
+    # Create the .seapie directory if it doesn't exist
+    seapie_dir = os.path.join(path, ".seapie")
+    if not os.path.exists(seapie_dir):
+        try:
+            os.makedirs(seapie_dir)
+        except OSError as e:
+            print(f"Error creating .seapie directory: {e}")
+            return
+        else:
+            print("Initialized .seapie directory in", path)
+
+    # Create the pickles, history, and snippets directories if they don't exist
+    subdirectories = ["pickles", "history", "snippets"]
+    for subdir in subdirectories:
+        subdir_path = os.path.join(seapie_dir, subdir)
+        if not os.path.exists(subdir_path):
+            try:
+                os.makedirs(subdir_path)
+            except OSError as e:
+                print(f"Error creating {subdir} directory: {e}")
+                return
+            else:
+                print("Initialized .seapie subdirectory in", subdir_path)
+
+    # Create the version file in the .seapie directory
+    version_file = os.path.join(seapie_dir, "version")
+    if not os.path.exists(version_file):
+        try:
+            with open(version_file, "w") as f:
+                f.write(ver)
+        except OSError as e:
+            print(f"Error creating version file: {e}")
+            return
+        else:
+            print("Initialized .seapie version file in", version_file)
+
+
+def init_seapie_dir_and_reset_state():
+    """Resets current settings, creates seapie dir if not exists and ensures
+    rw
+    """
+    STATE.update(__STATE__)
+    create_seapie_dir()
+    check_rw_access()
+
+
+def update_magic_vars(current_frame, event, arg):
     # inject useful variables to the frame. this change should propagate
     # since we are in trace function. and running 3.12.
     # this must happen before exec (i think)
@@ -141,7 +141,7 @@ def update_magic_variables(current_frame, event, arg):
     # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),
     # ctypes.c_int(1))
     # maybe. or it works because we are in the trace function.
-    if not CURRENT_SETTINGS["inject_magic"]:
+    if not STATE["inject_magic"]:
         return
 
     current_frame.f_locals["__lineno__"] = current_frame.f_lineno
@@ -171,3 +171,10 @@ def update_magic_variables(current_frame, event, arg):
     # NOTE: THE CONNECTION BETWEEN THESE MAGIC VALUES AND THE STATUS BAR
     # IS MAINTAINED MANUALLY IN SOURCE. THESE ARE NOT PASSED AS ARGS.
     # i.e: status bar could use different names and definitions.
+
+
+def print_start_banner():
+    inf = sys.version_info
+    pyver = f"{inf.major}.{inf.minor}.{inf.micro}"
+    print(f"Seapie {ver} running on Python {pyver} on {sys.platform}.")
+    print("Type '!help' for help. See status bar at the top for info.")

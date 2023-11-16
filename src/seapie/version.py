@@ -11,4 +11,4 @@
     * Never decrement a number except when resetting to zero like above.
 """
 
-seapie_ver = "3.0.0"
+ver = "3.0.0"

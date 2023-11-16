@@ -166,3 +166,13 @@ piilota kaikki käyttäjältä paitsi prompt().
 
 # jos hyppää sille riville missä seapie lähtee tai jos kaks peräkkäin niin tracettaa itseään koko prompt()
 kutsun läpi. trace functkion pitäis tunnistaa ongelma.
+
+# ainut exposattu funktio pitää olla prompt koska sitä vasten chekataan replissä. uus alias: set_trace
+
+dokumentoi funktiot lukemalla koodi että jotkut ominaisuudet ei unohdu
+
+tip:
+
+from seapie import prompt as breakpoint
+
+ctrl+f settings ja korvaa statella

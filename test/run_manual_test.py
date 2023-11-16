@@ -19,7 +19,7 @@ def main():
 
     seapie.prompt()
 
-    # 0 / 0
+    0 / 0
 
     x = 1
     lol()

@@ -7,7 +7,7 @@ import pickle
 import sys
 import traceback
 
-from .settings import CURRENT_SETTINGS
+from .state import STATE
 from .status import get_status, print_pickles
 
 
@@ -35,7 +35,7 @@ def bang_handler(user_input, frame, event, arg):
         if user_input.startswith("!e") or user_input.startswith("!echo"):
             pass  # echo bang is not saved to avoid infinite loop
         else:
-            CURRENT_SETTINGS["previous_bang"] = original_input
+            STATE["previous_bang"] = original_input
 
     # These bangs do not contain arguments so using simple check is ok.
     if user_input in ("!q", "!quit"):
@@ -164,8 +164,8 @@ def do_goto(frame, user_input):
 
 
 def do_condition(user_input):
-    if CURRENT_SETTINGS["callstack_escape_level"] != 0:
-        CURRENT_SETTINGS["callstack_escape_level"] = 0
+    if STATE["callstack_escape_level"] != 0:
+        STATE["callstack_escape_level"] = 0
         print("Resetting escape level to 0 before setting condition.")
 
     command_parts = user_input.split(" ", 1)
@@ -183,7 +183,7 @@ def do_condition(user_input):
         except Exception:
             pass
 
-        CURRENT_SETTINGS["step_until_expression"] = user_expression
+        STATE["step_until_expression"] = user_expression
         print(
             f"Stepping until 'bool(eval({repr(user_expression)}))' is True in"
             " active frame. All errors are ignored."
@@ -209,7 +209,7 @@ def do_echo(user_input):
     else:
         print("Invalid echo count. Use: !e 3 or !echo 3")
         return False
-    CURRENT_SETTINGS["echo_count"] = echo_count
+    STATE["echo_count"] = echo_count
     print("Repeating previous bang", echo_count, "times.")
 
 
@@ -306,8 +306,8 @@ def do_help():
 
 
 def do_magic():
-    CURRENT_SETTINGS["inject_magic"] = not CURRENT_SETTINGS["inject_magic"]
-    if CURRENT_SETTINGS["inject_magic"]:
+    STATE["inject_magic"] = not STATE["inject_magic"]
+    if STATE["inject_magic"]:
         print("Magic injection on.")
     else:
         # todo: tee tästä funktio ja ylipäänsä muut tässä filessä
@@ -320,8 +320,8 @@ def do_magic():
 
 
 def do_step():
-    if CURRENT_SETTINGS["callstack_escape_level"] != 0:
-        CURRENT_SETTINGS["callstack_escape_level"] = 0
+    if STATE["callstack_escape_level"] != 0:
+        STATE["callstack_escape_level"] = 0
         print("Resetting escape level to 0 before stepping.")
     return True
 
@@ -338,8 +338,8 @@ def do_run(frame):
 
 
 def do_bar():
-    CURRENT_SETTINGS["show_bar"] = not CURRENT_SETTINGS["show_bar"]
-    if CURRENT_SETTINGS["show_bar"]:
+    STATE["show_bar"] = not STATE["show_bar"]
+    if STATE["show_bar"]:
         print("Bar on.")
     else:
         print("Bar off.")
@@ -402,24 +402,24 @@ def do_where(frame):
 
 
 def do_up():
-    CURRENT_SETTINGS["callstack_escape_level"] += 1
+    STATE["callstack_escape_level"] += 1
     print(
         "Setting escape level to"
-        f" {CURRENT_SETTINGS['callstack_escape_level']}."
+        f" {STATE['callstack_escape_level']}."
         " Check status bar to see in which frame you are."
     )
     return False
 
 
 def do_down():
-    if CURRENT_SETTINGS["callstack_escape_level"] <= 0:
-        CURRENT_SETTINGS["callstack_escape_level"] = 0
+    if STATE["callstack_escape_level"] <= 0:
+        STATE["callstack_escape_level"] = 0
         print("Can't do deeper in callstack. Resetting escape level to 0.")
     else:
-        CURRENT_SETTINGS["callstack_escape_level"] -= 1
+        STATE["callstack_escape_level"] -= 1
         print(
             "Setting escape level to"
-            f" {CURRENT_SETTINGS['callstack_escape_level']}."
+            f" {STATE['callstack_escape_level']}."
             " Check status bar for current frame of this prompt."
         )
     return False
