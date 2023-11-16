@@ -47,7 +47,7 @@ def bang_handler(user_input, frame, event, arg):
     elif user_input in ("!h", "!help"):
         return do_help()
     elif user_input in ("!t", "!traceback"):
-        return do_tb(frame, num_frames_to_hide=0)  # No active exc -> num is 0.
+        return do_tb(frame, frames_to_hide=0)  # No exception, nothing to hide.
     elif user_input in ("!b", "!bar"):
         return do_bar()
     elif user_input in ("!m", "!magic"):
@@ -79,9 +79,9 @@ def bang_handler(user_input, frame, event, arg):
         return do_invalid(original_input)  # Got an invalid bang.
 
 
-def do_tb(frame, num_frames_to_hide):
+def do_tb(frame, frames_to_hide):
     """
-    if exception occurs in seapie, num frames tells how many seapie
+    if exception occurs in seapie, frames_to_hide tells how many seapie
     relatd frames to hide from the traceback found in exception.
     this is joined with other frames found with tb.extact_stack to show
     all frames from original source and frames from input but not seape itself
@@ -92,11 +92,7 @@ def do_tb(frame, num_frames_to_hide):
 
     # seapie would be present here so we hide it from the middle of the stack
     # Exclude the frames occupied by the debugger
-    # if num_frames_to_hide == 0:
-    #    # manual check needed because [:-0] is empty list instead of full
-    #    tb_exc_stack_filtered = traceback_exc.stack
-    # else:
-    tb_exc_stack_filtered = traceback_exc.stack[num_frames_to_hide:]
+    tb_exc_stack_filtered = traceback_exc.stack[frames_to_hide:]
 
     # we have to use both traceback.extract_stack(frame) and
     # traceback_exc.stack

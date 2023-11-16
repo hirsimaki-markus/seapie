@@ -9,28 +9,17 @@ a state stored in settings.py
 
 
 """
-from .repl import prompt, repl_exec
+from .repl import prompt
 from .version import ver
 
 __version__ = ver
 __author__ = "Markus Hirsimäki"
 __copyright__ = "This work is dedicated to public domain under The Unlicense."
 __license__ = "The Unlicense (https://choosealicense.com/licenses/unlicense/)"
-__all__ = [
-    "repl_exec",  # Part of actual repl.
-    "prompt",  # Breakpoint to trigger repl.
-    "seapie",  # Backwards compatibility alias.
-    "Seapie",  # Backwards compatibility alias.
-    "true_exec",  # Backwards compatibility alias.
-    "brk",  # New alias.
-    "bp",  # New alias.
-]
+__all__ = ["prompt", "seapie", "Seapie", "brk", "bp"]
 
-# Old names for compatibility with version 1.x.x and 2.x.x naming schemes.
-seapie = prompt
-Seapie = prompt
-true_exec = repl_exec
 
-# Provide two common aliases for breakpoint.
-brk = prompt
-bp = prompt
+seapie = prompt  # Alias for name used in seapie versions 1 and 2.
+Seapie = prompt  # Alias for name used in seapie versions 1 and 2.
+brk = prompt  # A better new alias.
+bp = prompt  # A better new alias.

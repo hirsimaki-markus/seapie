@@ -2,6 +2,7 @@ koneen todo loppuun
 getchistä paketti githubiin?
 tee sittenkin oma input koska historia?
 
+muista cltr+f jos massa replaceja, voi olla stringinä
 
 # beginner friendly debugger with advanced stepping features and remote debugging support
 
@@ -160,7 +161,7 @@ törmääkö lambda circular impporttiin?
 
 
 piilota kaikki käyttäjältä paitsi prompt().
-älä anna repl exec tarjolla vaan mieluummin vanhasta versiota true_exec tarjolle.
+älä anna repl exec tarjolla vaan mieluummin vanhasta versiota true_exec tarjolle. ctrl+f repl_exec
 
 
 
