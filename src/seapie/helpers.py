@@ -9,7 +9,7 @@ from .version import ver
 
 
 def escape_frame(frame):
-    """Escapes n frames up if required by settings
+    """Escapes n frames up if required by state
 
     returns the "active" frame. ehkä nimeä tänne active frame?
     """
@@ -30,7 +30,7 @@ def escape_frame(frame):
 
 
 def step_until_condition(frame):
-    """Automatically steps if current settings have an expression to check"""
+    """Automatically steps if current state have an expression to check"""
     user_expression = STATE["step_until_expression"]
     if user_expression is None:  # no need to step. no expression set.
         return False
@@ -125,7 +125,7 @@ def create_seapie_dir():
 
 
 def init_seapie_dir_and_reset_state():
-    """Resets current settings, creates seapie dir if not exists and ensures
+    """Resets current state, creates seapie dir if not exists and ensures
     rw
     """
     STATE.update(__STATE__)

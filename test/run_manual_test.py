@@ -17,9 +17,9 @@ def main():
             print(x, kissa)
         return "nice"
 
-    seapie.prompt()
+    # [seapie.prompt() for i in "asd"]
 
-    0 / 0
+    # 0 / 0
 
     x = 1
     lol()

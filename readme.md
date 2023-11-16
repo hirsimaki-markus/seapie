@@ -10,6 +10,23 @@ compability reasons, just ask.
 
 </details>
 
+<br>
+<br>
+
+## Documentation
+<details><summary>Show details</summary>
+
+```python
+>>> import seapie
+>>> help(seapie)
+>>> # Or take a look at the well documented source.
+```
+
+</details>
+
+<br>
+<br>
+
 
 
 
@@ -33,7 +50,7 @@ compability reasons, just ask.
   ```bash
   # Remember to increment __version__ in __init__.py
   seapie$ python -m build --wheel && rm -rf build/ && rm -rf src/seapie.egg-info/
-  seapie$ seapie$ python -m twine check dist/*
+  seapie$ python -m twine check dist/*
   seapie$ python -m twine upload dist/*
   seapie$ rm -rf dist/
   ```

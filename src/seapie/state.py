@@ -1,5 +1,5 @@
 # State that will persist over different calls to prompt().
-# These settings can be modified by anyone anywhere. they are not passed as
+# this state can be modified by anyone anywhere. they are not passed as
 # arguments. these are as global of a variable as possible.
 # this referenced to by various functions in this module randomly.
 STATE = {
@@ -12,7 +12,7 @@ STATE = {
 }
 
 
-__STATE__ = {  # Default settings
+__STATE__ = {  # Default state
     "show_bar": True,
     "callstack_escape_level": 0,
     "step_until_expression": None,

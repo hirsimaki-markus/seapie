@@ -1,10 +1,54 @@
-koneen todo loppuun
-getchistä paketti githubiin?
-tee sittenkin oma input koska historia?
+# beginner friendly debugger with advanced stepping features and remote debugging support
 
 muista cltr+f jos massa replaceja, voi olla stringinä
 
-# beginner friendly debugger with advanced stepping features and remote debugging support
+
+* tee viimeistelyt nykyiseen ennenkuin remote debug tai alternate input funktio.
+  nyt tärkee dokumentaatio kuntoon ja siivous, myöhemmin remote debug ja custom input ja muut
+* koneen todo loppuun
+* getchistä paketti githubiin?
+* tee sittenkin oma input koska historia?
+* Maybe do something useful with ! and !! and !!! and _ and __ and ___
+* tee open for contriutions banneri
+* literally jokaisen doc stringin alkuun joku sama rimåu että tää ei oo user facing element.
+  kaikki dokumentaatio on paikasa X ja siihen viittaus.
+* dokumentoi varoitus että !c voi tehdä side efektejä koska evali
+* dokumentoi että objektit varastoidaan pikleina levylle ja piklet ei oo turvallisia.
+* tarkista että jokainen bangi käyttää returnissa aina jotain validia palautus arvoa....
+* tee jossain vaiheessa feature list vertaamalla pdb:hen
+* kerro sonjalle seapie. jounille sama. myös topias ja anssi ja olli ja glukosi ja patrik
+* dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
+* piilota kaikki käyttäjältä paitsi prompt().
+  älä anna repl exec tarjolla vaan mieluummin vanhasta versiota true_exec tarjolle. ctrl+f repl_exec
+* dokumentoi funktiot lukemalla koodi että jotkut ominaisuudet ei unohdu, oma code review koska ei voi unit testaa.
+  vai voiko tälle tehdä unit testit? ei taida olla worth kyllä.
+* ainut exposattu funktio pitää olla prompt koska sitä vasten chekataan replissä. uus alias: set_trace
+* manuaali testaa jokainen rivi jos vain mahdollista ennen releasea. huh huh.
+* johonki nootti että debuggerin ei pitisi kaatua koskaan, bugi report pls jos kaatuu.
+  ehkä tekemällä custom sys.excepthook(type, value, traceback) joka wrappaa sen oikean hookin jos ei oo None
+  ja lopuksi printtaa viestin että if you think this crash was caused by seapie pls report
+* PITÄISIKÖ STATUS BAARIN LUKEA TAIKAMUUTTUJAT SUORAAN??????????????
+  mutta sitten jos !m pois päältä niin ne ei edes näy kyllä että meh. tarviiko ne paremmat nimet niin ei
+  tarvi koskaan laittaa pois päältä? tai sit lukee suoraan ja !m saa lukemaan eri nimestä mihin kukaan ei osu?
+  tai eri paikasta? tää varmaan bugi altis
+  * retval ja exception vois kans ehkä olla status baarissa? ehkä vikalla rivillä?
+    * ehkä vaikka että jos ei oo none niin näytetään?
+* !condition ja !step vois olla sama koska ei tarvita enää !s 10 kun on olemassa !e
+* !step ja !c kuuluu samaa koska stepin ei tarvi tukea countteja kun on echo
+* ajatuksella rivi rivltä code review
+* menussa oleva callstac johonki listaan ja taikamuuttujaan? koska menussa kaikki muka saatavilla?
+      nyt missään ei lue niitä <frozen lib> tms paskaa koska __file__ käytössä myös menussa eikä co_filename
+      ylipäänsä pitäs valita missä co_name ja missä co_filename ja missä __file__
+      jos antaa tracettaa internal error handlinggiin niin näkee frozen juttuja co_filenamessa
+* mieti jokaiselle Nonellle että kuuluuko siihen baarissa mieluumin error? tetty pitää olla yhteensopva taika muuttujien kansa kyllä
+* dokumentoi mille kaikille bangeille !e toimii. tldr: kaikki mikä muuttaa tilaa
+* pikle dokuihin sana variable.
+* dokumentoi kaikki taikamuuttujat mitkä on saatavilla ja että päivittyy per step. __file__ muutenkin kyl.
+  * selitä tyylillä että ensin __file__ esimerkkinä !c komennossa ja sit muut
+* github readmehen missä on dokumentaatio.
+* laita varoitus jos koodia ajetaan pienemmällä versiolla kuin 3.12 koska list comprehension muuttui silloin
+  * pep709 on se mistä roikkuu list comprehension ja pep669 on se mistä roikkuu tracetus
+  * minimi version on missä tuli walrus eli 3.8
 
 
 remote notes:
@@ -16,164 +60,50 @@ remote notes:
     https://docs.python.org/3/library/ssl.html
     jos forwattuja portteja niin localhostin kuuntelu ei pelasta.
     koko trace kutsu pitää ignoree jos ei oo eka connection. mieti jos callback toistuu.
-
-
-
-
-
-description = 'Seapie is easy to use python debugger',
-keywords = ['debugger', 'seapie', 'interactive', 'injection', 'inject', 'repl', 'debg', 'exec'],
-'Development Status :: 5 - Production/Stable',
-'Intended Audience :: Developers',
-'Topic :: Software Development :: Build Tools',
-'License :: Other/Proprietary License',
-'Programming Language :: Python :: 3.7',
-Platform: any
-Classifier: Development Status :: 5 - Production/Stable
-Classifier: Intended Audience :: Developers
-Classifier: Topic :: Software Development :: Build Tools
-Classifier: License :: Other/Proprietary License
-Classifier: Programming Language :: Python :: 3.7
-
-
-_Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
-_Have you ever wanted to debug something without ton of print()s but builtin debugger seems too clumsy?_
-
-_Me too. I also got solution for it below._
-
-```seapie``` stands for Scope Escaping Arbitrary Python Injection Executor
-
-
-* Platform independent. Only requirement is CPython api. If you don't know what this is everything should likely work out of the box
-* ```pip3 install seapie```
-
-
-A picture tells more than thousands words. Internal !help shown below
-
-
-## Examples
-* Start tracing or to just open interactive prompt: ```from seapie import seapie;seapie()``` and maybe enter ```!help```
-* Breakpoint your currently onging tracing: step until next ```seapie()``` by using ```!run``` or whatever suits you
-
-
-* Add exit banner/message
-* Send me email or any message anywhere if you have suggestions
-* Maybe do something useful with ! and !! and !!! and _ and __ and ___
-
-
-## Unlicensing
-Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
-
-
-laita varoitus jos koodia ajetaan pienemmällä versiolla kuin 3.12 koska list comprehension muuttui silloin
-pep709 on se mistä roikkuu list comprehension ja pep669 on se mistä roikkuu tracetus
-minimi version on missä tuli walrus eli 3.8
-
-
-
-mieti mitä kaikea kannattaa paljastaa seapien sisältä. funktiot ei toimi yksin. pääosin ei kannata paljastaa mitään.
-
-kerro sonjalle seapie. jounille sama. myös topias ja anssi ja olli ja glukosi ja patrik
-
-dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
-
-
-dokumentoi varoitus että !c voi tehdä side efektejä
-
-
-
-
-
-
-
-
-
-
-
-known issues: defining recursive functions only works in the global scope in the interpeter
-
-
-dokumentoi kaikki taikamuuttujat mitkä on saatavilla ja että päivittyy per step. __file__ muutenkin kyl.
-selitä tyylillä että ensin __file__ esimerkkinä !c komennossa ja sit muut
-
-
-dokumentoi mille kaikille bangeille !e toimii. tldr: kaikki mikä muuttaa tilaa
-dokumentoi you can move objects between sessions or between scopes by pickling them
-picke dokuihin sana variable.
-
-
-mahdollista prodin monkey patch remote debuggauksella?
-
-
-mieti jokaiselle Nonellle että kuuluuko siihen baarissa mieluumin error? tetty pitää olla yhteensopva taika
-muuttujien kansa kyllä
-
-
-todo: !step ja !c kuuluu samaa koska stepin ei tarvi tukea countteja kun on echo
-todo: ajatuksella rivi rivltä code review
-
-todo: menussa oleva callstac johonki listaan ja taikamuuttujaan? koska menussa kaikki muka saatavilla?
-      nyt missään ei lue niitä <frozen lib> tms paskaa koska __file__ käytössä myös menussa eikä co_filename
-      ylipäänsä pitäs valita missä co_name ja missä co_filename ja missä __file__
-      jos antaa tracettaa internal error handlinggiin niin näkee frozen juttuja co_filenamessa
-
-tee jossain vaiheessa feature list vertaamalla pdb:hen
-
-
-tee esimerkki miten prodiin jätetään hookki
-
-
-
-jos oot interactive interpreereissä niin ei pidä steppaa vaan mieluummon !r koska se lopettaa tracettamisen.
-!s saa aikaan sen että seapie aukeaa uudelleen vaan suoraan.
-
-johonki nootti että debuggerin ei pitisi kaatua koskaan, bugi report pls jos kaatuu
-
-
-
-
-
-
-
-
-
-tarkista että jokainen bangi käyttää returnissa aina jotain validia palautus arvoa....
-
-
-tee viimeistelyt nykyiseen ennenkuin remote debug tai alternate input funktio.
-nyt tärkee dokumentaatio kuntoon ja siivous sekä remote debug
-!condition ja !step vois olla sama koska ei tarvita enää !s 10 kun on olemassa !e
-
-
-manuaali testaa jokainen rivi jos vain mahdollista ennen releasea. huh huh.
-
-retval ja exception vois kans ehkä olla status baarissa? ehkä vikalla rivillä?
-- ehkä vaikka että jos ei oo none niin näytetään?
-
-
-
-PITÄISIKÖ STATUS BAARIN LUKEA TAIKAMUUTTUJAT SUORAAN??????????????
-mutta sitten jos !m pois päältä niin ne ei edes näy kyllä että meh. tarviiko ne paremmat nimet?
-
-
-pitäiskö ternary return replissä korvata lambda + nonella? none looppaa ja lambda palautetaan?
-törmääkö lambda circular impporttiin?
-
-
-piilota kaikki käyttäjältä paitsi prompt().
-älä anna repl exec tarjolla vaan mieluummin vanhasta versiota true_exec tarjolle. ctrl+f repl_exec
-
-
-
-# jos hyppää sille riville missä seapie lähtee tai jos kaks peräkkäin niin tracettaa itseään koko prompt()
-kutsun läpi. trace functkion pitäis tunnistaa ongelma.
-
-# ainut exposattu funktio pitää olla prompt koska sitä vasten chekataan replissä. uus alias: set_trace
-
-dokumentoi funktiot lukemalla koodi että jotkut ominaisuudet ei unohdu
-
-tip:
-
-from seapie import prompt as breakpoint
-
-ctrl+f settings ja korvaa statella
+    tee esimerkki miten prodiin jätetään hookki
+    mahdollista prodin monkey patch remote debuggauksella?
+
+
+tips:
+    from seapie import prompt as breakpoint
+    you can move objects between sessions or between scopes by pickling them
+
+
+known issues:
+    * defining recursive functions only works in the global scope in the prompt
+    * seapie can sometimes behave unexpectedly or in confusing manner if used in the interactive interpreter.
+      this is especially true for using !c or !s such that you would return to the global scope in the interpreter.
+      additionally opening seapie in comprehension such as list comprehension in the interactive interpreter
+      has undefined behaviour. a workaround is to call !r when returning control to the python interpeter from
+      the seapie prompt instead of calling !s. the workaround to list comprehensions is....
+      todo: tutki korjaantuuko tää jos käyttää sys._getframe f_backin sijaan prompt()issa
+      * jos oot interactive interpreereissä niin ei pidä steppaa vaan mieluummon !r koska se lopettaa tracettamisen.
+        * !s saa aikaan sen että seapie aukeaa uudelleen vaan suoraan.
+
+
+identifiers etc:
+    keywords = ['debugger', 'seapie', 'interactive', 'injection', 'inject', 'repl', 'debg', 'exec'],
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Build Tools',
+    'License :: Other/Proprietary License',
+    'Programming Language :: Python :: 3.7',
+    Platform: any
+    Classifier: Development Status :: 5 - Production/Stable
+    Classifier: Intended Audience :: Developers
+    Classifier: Topic :: Software Development :: Build Tools
+    Classifier: License :: Other/Proprietary License
+    Classifier: Programming Language :: Python :: 3.7
+
+
+wanha:
+    _Have you ever wanted to just open the normal interactive prompt inside of your program and then continue?_\
+    _Have you ever wanted to debug something without ton of print()s but builtin debugger seems too clumsy?_
+    _Me too. I also got solution for it below._
+    ```seapie``` stands for Scope Escaping Arbitrary Python Injection Executor
+    Platform independent. Only requirement is CPython api. If you don't know what this is everything should likely work out of the box
+    A picture tells more than thousands words. Internal !help shown below
+    * Start tracing or to just open interactive prompt: ```from seapie import seapie;seapie()``` and maybe enter ```!help```
+    * Breakpoint your currently onging tracing: step until next ```seapie()``` by using ```!run``` or whatever suits you
+    * Send me email or any message anywhere if you have suggestions
+    Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020

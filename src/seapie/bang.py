@@ -1,5 +1,6 @@
 """
 bang handler stuff and related tools
+
 """
 
 import os
@@ -27,6 +28,8 @@ def bang_handler(user_input, frame, event, arg):
 
     returns true if the code should step
     false if code should not step
+
+    all the do functions cause side effects.
     """
     original_input = user_input  # needed as arg for bangs that take args
     user_input = user_input.lower()
@@ -86,7 +89,6 @@ def do_tb(frame, frames_to_hide):
     this is joined with other frames found with tb.extact_stack to show
     all frames from original source and frames from input but not seape itself
     """
-    exc_type, exc_val, exc_tb = sys.exc_info()  # Get the traceback
 
     traceback_exc = traceback.TracebackException(*sys.exc_info())
 
@@ -106,8 +108,8 @@ def do_tb(frame, frames_to_hide):
     print("Traceback (most recent call last):")  # Print header.
     print(formatted_traceback, end="")  # Print traceback,
 
-    # Only print the error itself if an exception is being handled
-    if exc_type is not None and exc_val is not None:
+    exc_type, exc_val, _exc_tb = sys.exc_info()  # Get active exception if any.
+    if exc_type is not None and exc_val is not None:  # Print active exception.
         print(f"{exc_type.__name__}: {exc_val}")
 
     return False

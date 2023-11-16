@@ -122,7 +122,7 @@ def repl_loop(frame, event, arg):
 
     this function is essentially called between every source line
 
-    most parts of this function use the global settings.
+    most parts of this function use the global state.
     """
 
     if hasattr(sys, "last_traceback"):  # Unhandled error in original source.
@@ -132,10 +132,10 @@ def repl_loop(frame, event, arg):
         return  # Not returning a local trace function to skip seapie's frame.
 
     while True:  # This is the main repl (>>> ... ... ...) loop.
-        current_frame = escape_frame(frame)  # Escape frame based on settings.
+        current_frame = escape_frame(frame)  # Escape frame based on STATE.
 
-        update_magic_vars(current_frame, event, arg)  # Uses global settings.
-        update_status_bar(current_frame, event, arg)  # Uses global settings.
+        update_magic_vars(current_frame, event, arg)  # Uses STATE.
+        update_status_bar(current_frame, event, arg)  # Uses STATE.
 
         if step_until_condition(frame):  # Note: frame, not current_frame.
             return repl_loop

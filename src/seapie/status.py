@@ -14,7 +14,7 @@ def update_status_bar(current_frame, event, arg):
 
     if status is longer than terminal width, it gets cut.
 
-    only prints the bar if current settings allow it.
+    only prints the bar if STATE allow it.
     """
     if not STATE["show_bar"]:
         return
