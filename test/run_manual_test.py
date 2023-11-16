@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import importmonkey  # type: ignore
+import importmonkey
 
-importmonkey.add_path("../src")  # type: ignore
-import seapie  # noqa: E402
+importmonkey.add_path("../src")
+import seapie  # noqa: E402, F401  # Silence linting.
+from seapie import prompt
 
 
 def main():
@@ -18,11 +19,12 @@ def main():
         return "nice"
 
     # [seapie.prompt() for i in "asd"]
-
-    # 0 / 0
+    seapie.prompt()
+    seapie.prompt()
+    0 / 0
 
     x = 1
-    lol()
+    # lol()
 
     y = 2
     z = 3

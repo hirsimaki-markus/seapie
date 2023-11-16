@@ -49,6 +49,12 @@ muista cltr+f jos massa replaceja, voi olla stringinä
 * laita varoitus jos koodia ajetaan pienemmällä versiolla kuin 3.12 koska list comprehension muuttui silloin
   * pep709 on se mistä roikkuu list comprehension ja pep669 on se mistä roikkuu tracetus
   * minimi version on missä tuli walrus eli 3.8
+* onko aliakset vaan turhaa clutteria?
+* muuta !f lisämään local variable mieluummin ja ota sill samanlainen taikanimi kuin muille
+* se return nuoli juttu oli tosi kätevä jossain tilanteissa. takas se? samassa yhteydessä kuin ylöreunaan
+  se callstack?
+* tämä fixaa kaksi tyhmää vikaa mitä pdb:ssä on: pdb kaatuu jos tracetat exit() ja tää ei trace error printtausta
+* kaivele kaikki pyton dscordit läpit showcase kanavien varalle kun valmis
 
 
 remote notes:
@@ -77,8 +83,16 @@ known issues:
       has undefined behaviour. a workaround is to call !r when returning control to the python interpeter from
       the seapie prompt instead of calling !s. the workaround to list comprehensions is....
       todo: tutki korjaantuuko tää jos käyttää sys._getframe f_backin sijaan prompt()issa
-      * jos oot interactive interpreereissä niin ei pidä steppaa vaan mieluummon !r koska se lopettaa tracettamisen.
-        * !s saa aikaan sen että seapie aukeaa uudelleen vaan suoraan.
+    * jos oot interactive interpreereissä niin ei pidä steppaa vaan mieluummon !r koska se lopettaa tracettamisen.
+      * !s saa aikaan sen että seapie aukeaa uudelleen vaan suoraan.
+    * currently using in interpreter is not supported?
+    * tldr on että !step ja !condition on unsupported interactive interpreteriss
+    ä
+    # Note: In interactive interpreter last_exc will never clear. This is
+    # why seapie is not supported in interactive mode; it will fail to
+    # start if any exception has happened prior to seapie call. There are
+    # also other issues such as stepping causing hard-to-define behaviour.
+    # !t is also mostly useless and !w will always fail.
 
 
 identifiers etc:

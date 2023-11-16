@@ -87,18 +87,6 @@ def get_status(frame, event, arg):
         f"lineno: {frame.f_lineno}{sep}scope: {scope}{sep}event: {repr(event)}"
     )
 
-    # additional stuff for sometimes.
-    # if event == "return":  # 4
-    #    # A given object's repr() might fail for some objects so we default
-    #    # back to object.__repr__ if neded
-    #    try:
-    #        retval = f"{repr(arg)}"
-    #    except Exception:
-    #        retval = f"{object.__repr__(arg)}"
-    #    lines.append(retval)
-    # if event == "exception":  # 4
-    #    lines.append(repr(arg[1]))
-
     return lines
 
 

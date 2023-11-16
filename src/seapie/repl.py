@@ -62,15 +62,9 @@ def get_repl_input(frame):
         except EOFError:  # ctrl + d / ctrl + z
             print()
             exit()
-        except ValueError:  # I/O operation on closed file.
-            print(
-                "\nFailed to read from stdin with input(). Was there another"
-                " breakpoint after try-except in which you called !q or exit()"
-                " during an exception event? If that was the cause, use"
-                " os._exit(0) instead."
-            )
+        except ValueError:  # sys.stdin.close() was likely called during exit.
+            print()
             exit()
-
         if line.startswith("!") and not lines:  # Got a bang on first line.
             return line
         lines.append(line)
@@ -125,11 +119,18 @@ def repl_loop(frame, event, arg):
     most parts of this function use the global state.
     """
 
-    if hasattr(sys, "last_traceback"):  # Unhandled error in original source.
+    if hasattr(sys, "last_exc"):  # Unhandled error in original source.
         return  # Don't return trace func to not trace Python's error handling.
 
-    if frame.f_globals.get("prompt") is prompt:  # Dont trace new prompt calls.
+    # Dont trace new prompt calls. uses magic string in docstring.
+    if "do-not-modify-this-string-it-is-used-by-seapie" in (
+        frame.f_code.co_consts[0] or ""  # null check with or ""
+    ):
         return  # Not returning a local trace function to skip seapie's frame.
+
+    if frame.f_locals.get("self") is exit:
+        # Dont trace intrnal exit handling. exit note: Exit is class.
+        return  # Not returning a local trace function to skip exit's frames.
 
     while True:  # This is the main repl (>>> ... ... ...) loop.
         current_frame = escape_frame(frame)  # Escape frame based on STATE.
@@ -159,6 +160,16 @@ def prompt():
        banner,
        init,
        Set trace function for active frame and then for all future frames.
+
+    note: modifying this function is risky. repl_loop relies on there being only
+    1 variable with a specific name. thi is used to identify if tracing should
+    be skipped so that seapie does not trace itself.
+
+    note that this function does not assign any variables except for the hidden
+    one.
+
+    do-not-modify-this-string-it-is-used-by-seapie
+
     """
     if (trace := sys.gettrace()) is None:
         print_start_banner()
@@ -166,6 +177,6 @@ def prompt():
         inspect.currentframe().f_back.f_trace = repl_loop
         sys.settrace(repl_loop)
     elif trace is not repl_loop:
-        raise RuntimeError(f"Another trace function already set: {trace}")
+        raise RuntimeError(f"Trace function already set: {trace}")
     else:
         print("Ignoring call to prompt() because seapie is already tracing.")
