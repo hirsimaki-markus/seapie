@@ -4,11 +4,10 @@
         seapie
         <br>
         <br>
+        <img src="img/seapie.png" alt="seapie">
+        <br>
         <br>
     </h1>
-</div>
-![seapie](img/seapie.png)
-<div align="center">
     <br>
     <br>
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12.0-blue?logo=python&logoColor=white"/></a>
