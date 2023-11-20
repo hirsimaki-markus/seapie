@@ -5,7 +5,7 @@ import os
 import sys
 
 from .state import __STATE__, STATE
-from .version import ver
+from .version import __version__
 
 
 def escape_frame(frame):
@@ -116,7 +116,7 @@ def create_seapie_dir():
     if not os.path.exists(version_file):
         try:
             with open(version_file, "w") as f:
-                f.write(ver)
+                f.write(__version__)
         except OSError as e:
             print(f"Error creating version file: {e}")
             return
@@ -144,9 +144,17 @@ def update_magic_vars(current_frame, event, arg):
     if not STATE["inject_magic"]:
         return
 
+    accum = []
+    callstack_frame = current_frame
+    while callstack_frame:
+        accum.append(callstack_frame.f_code.co_name)
+        callstack_frame = callstack_frame.f_back
+
+    current_frame.f_locals["__callstack__"] = list(reversed(accum))
+
     current_frame.f_locals["__lineno__"] = current_frame.f_lineno
 
-    current_frame.f_locals["__scope__"] = current_frame.f_code.co_name
+    # current_frame.f_locals["__scope__"] = current_frame.f_code.co_name
 
     current_frame.f_locals["__event__"] = event
 
@@ -160,12 +168,12 @@ def update_magic_vars(current_frame, event, arg):
     current_frame.f_locals["__source__"] = source
 
     if event == "return":
-        current_frame.f_locals["__retval__"] = arg
+        current_frame.f_locals["__returnval__"] = arg
     else:
-        current_frame.f_locals["__retval__"] = None
+        current_frame.f_locals["__returnval__"] = None
 
     if event == "exception":
-        current_frame.f_locals["__exception__"] = arg
+        current_frame.f_locals["__exception__"] = arg[1]
     else:
         current_frame.f_locals["__exception__"] = None
     # NOTE: THE CONNECTION BETWEEN THESE MAGIC VALUES AND THE STATUS BAR
@@ -174,7 +182,14 @@ def update_magic_vars(current_frame, event, arg):
 
 
 def print_start_banner():
-    inf = sys.version_info
-    pyver = f"{inf.major}.{inf.minor}.{inf.micro}"
-    print(f"Seapie {ver} running on Python {pyver} on {sys.platform}.")
-    print("Type '!help' for help. See status bar at the top for info.")
+    invert = "\x1b[7m"  # invert color
+    reset = "\x1b[0m"  # reset color
+    banner = f"""
+                {invert} ╒════════════════════╕ {reset}
+                {invert}    ┏┓ ┏┓ ┏┓ ┏┓  ╻ ┏┓   {reset}
+                {invert}    ┗┓ ┣┛ ┏┫ ┣┛ ╺┓ ┣┛   {reset}
+                {invert}    ┗┛ ┗┛ ┗┛ ╹   ╹ ┗┛   {reset}
+                {invert} ╘════════════════════╛ {reset}
+    """
+    print(banner)
+    print("Enter !help or !h for help. See status bar at the top for info.")

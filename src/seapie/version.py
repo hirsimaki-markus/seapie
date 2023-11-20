@@ -9,6 +9,9 @@
     * Incrementing minor resets patch to 0.
     * Incrementing patch does not affect other numbers.
     * Never decrement a number except when resetting to zero like above.
+
+
+    version has been placed in separate file to avoid circular dependencies.
 """
 
-ver = "3.0.0"
+__version__ = "3.0.0"

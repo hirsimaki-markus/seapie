@@ -2,60 +2,47 @@
 
 muista cltr+f jos massa replaceja, voi olla stringinä
 
-
 * tee viimeistelyt nykyiseen ennenkuin remote debug tai alternate input funktio.
   nyt tärkee dokumentaatio kuntoon ja siivous, myöhemmin remote debug ja custom input ja muut
 * koneen todo loppuun
-* getchistä paketti githubiin?
-* tee sittenkin oma input koska historia?
-* Maybe do something useful with ! and !! and !!! and _ and __ and ___
-* tee open for contriutions banneri
 * literally jokaisen doc stringin alkuun joku sama rimåu että tää ei oo user facing element.
   kaikki dokumentaatio on paikasa X ja siihen viittaus.
-* dokumentoi varoitus että !c voi tehdä side efektejä koska evali
-* dokumentoi että objektit varastoidaan pikleina levylle ja piklet ei oo turvallisia.
-* tarkista että jokainen bangi käyttää returnissa aina jotain validia palautus arvoa....
-* tee jossain vaiheessa feature list vertaamalla pdb:hen
-* kerro sonjalle seapie. jounille sama. myös topias ja anssi ja olli ja glukosi ja patrik
-* dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
-* piilota kaikki käyttäjältä paitsi prompt().
-  älä anna repl exec tarjolla vaan mieluummin vanhasta versiota true_exec tarjolle. ctrl+f repl_exec
-* dokumentoi funktiot lukemalla koodi että jotkut ominaisuudet ei unohdu, oma code review koska ei voi unit testaa.
-  vai voiko tälle tehdä unit testit? ei taida olla worth kyllä.
 * ainut exposattu funktio pitää olla prompt koska sitä vasten chekataan replissä. uus alias: set_trace
-* manuaali testaa jokainen rivi jos vain mahdollista ennen releasea. huh huh.
-* johonki nootti että debuggerin ei pitisi kaatua koskaan, bugi report pls jos kaatuu.
-  ehkä tekemällä custom sys.excepthook(type, value, traceback) joka wrappaa sen oikean hookin jos ei oo None
-  ja lopuksi printtaa viestin että if you think this crash was caused by seapie pls report
+* piilota kaikki käyttäjältä paitsi prompt().
+* pitääkö status bar laittaa hakemaan kaikki nimet samalla logiikalla kuin taika arvot?
+* tee jossain vaiheessa feature list vertaamalla pdb:hen
+* dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
 * PITÄISIKÖ STATUS BAARIN LUKEA TAIKAMUUTTUJAT SUORAAN??????????????
   mutta sitten jos !m pois päältä niin ne ei edes näy kyllä että meh. tarviiko ne paremmat nimet niin ei
   tarvi koskaan laittaa pois päältä? tai sit lukee suoraan ja !m saa lukemaan eri nimestä mihin kukaan ei osu?
   tai eri paikasta? tää varmaan bugi altis
-  * retval ja exception vois kans ehkä olla status baarissa? ehkä vikalla rivillä?
-    * ehkä vaikka että jos ei oo none niin näytetään?
-* !condition ja !step vois olla sama koska ei tarvita enää !s 10 kun on olemassa !e
-* !step ja !c kuuluu samaa koska stepin ei tarvi tukea countteja kun on echo
-* ajatuksella rivi rivltä code review
-* menussa oleva callstac johonki listaan ja taikamuuttujaan? koska menussa kaikki muka saatavilla?
-      nyt missään ei lue niitä <frozen lib> tms paskaa koska __file__ käytössä myös menussa eikä co_filename
-      ylipäänsä pitäs valita missä co_name ja missä co_filename ja missä __file__
-      jos antaa tracettaa internal error handlinggiin niin näkee frozen juttuja co_filenamessa
 * mieti jokaiselle Nonellle että kuuluuko siihen baarissa mieluumin error? tetty pitää olla yhteensopva taika muuttujien kansa kyllä
 * dokumentoi mille kaikille bangeille !e toimii. tldr: kaikki mikä muuttaa tilaa
-* pikle dokuihin sana variable.
-* dokumentoi kaikki taikamuuttujat mitkä on saatavilla ja että päivittyy per step. __file__ muutenkin kyl.
-  * selitä tyylillä että ensin __file__ esimerkkinä !c komennossa ja sit muut
-* github readmehen missä on dokumentaatio.
-* laita varoitus jos koodia ajetaan pienemmällä versiolla kuin 3.12 koska list comprehension muuttui silloin
-  * pep709 on se mistä roikkuu list comprehension ja pep669 on se mistä roikkuu tracetus
-  * minimi version on missä tuli walrus eli 3.8
-* onko aliakset vaan turhaa clutteria?
-* muuta !f lisämään local variable mieluummin ja ota sill samanlainen taikanimi kuin muille
-* se return nuoli juttu oli tosi kätevä jossain tilanteissa. takas se? samassa yhteydessä kuin ylöreunaan
-  se callstack?
-* tämä fixaa kaksi tyhmää vikaa mitä pdb:ssä on: pdb kaatuu jos tracetat exit() ja tää ei trace error printtausta
-* kaivele kaikki pyton dscordit läpit showcase kanavien varalle kun valmis
 
+later:
+    * dokumentoi pikle dokuihin sana variable.
+    * ajatuksella rivi rivltä code review
+    * dokumentoi kaikki taikamuuttujat mitkä on saatavilla ja että päivittyy per step. __file__ muutenkin kyl.
+      päivittyy itseasiassa vielä useammin koska !u esim muuttaa ne
+    * dokumentoi varoitus että !c voi tehdä side efektejä koska evali
+    * dokumentoi että objektit varastoidaan pikleina levylle ja piklet ei oo turvallisia.
+    * getchistä paketti githubiin? vai tee sittenkin oma input koska historia?
+    * tarkista että jokainen bangi käyttää returnissa aina jotain validia palautus arvoa....
+    * dokumentoi funktiot lukemalla koodi että jotkut ominaisuudet ei unohdu, oma code review koska ei voi unit testaa.
+      vai voiko tälle tehdä unit testit? ei taida olla worth kyllä.
+    * johonki nootti että debuggerin ei pitisi kaatua koskaan, bugi report pls jos kaatuu.
+    * manuaali testaa jokainen rivi jos vain mahdollista ennen releasea. huh huh.
+    * Maybe do something useful with ! and !! and !!! and _ and __ and ___
+    * tee open for contriutions banneri
+    * kerro sonjalle seapie. jounille sama. myös topias ja anssi ja olli ja glukosi ja patrik
+    * kaivele kaikki pyton discordit läpit showcase kanavien varalle kun valmis
+    * reddit ja hacker news postit
+    * tämä fixaa kaksi tyhmää vikaa mitä pdb:ssä on: pdb kaatuu jos tracetat exit() ja tää ei trace error printtausta
+    * selitä taikamuuttujat
+       * selitä tyylillä että ensin __file__ esimerkkinä !c komennossa ja sit muut
+    * selitä vaikeempi steppaaminen niinkuin vaikka !s __lineno__ == 18 and __callstack__[-1] == "lol"
+      * n stepin tekemiseen kannattaa käyttää !e
+    * aseta paketin minimi python versio 3.8 koska walrus
 
 remote notes:
     remote host should fail after N incorrect passwords.

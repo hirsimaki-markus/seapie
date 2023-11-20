@@ -80,6 +80,18 @@ def get_repl_input(frame):
             continue
 
 
+def true_exec(code, scope):
+    """This function is provided for backwards compability with earlier seapie
+    versions. It might be deprecated later.
+    """
+    frame = sys._getframe(scope + 1)  # +1 escapes true_exec itself
+    exec(code, frame.f_globals, frame.f_locals)
+
+    # PyFrame_LocalsToFast allows overwriting vars (like functions) in source.
+    c_int1 = ctypes.c_int(1)  # 1 is for delete and 0 is for update only.
+    ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame), c_int1)
+
+
 def repl_exec(frame, source):
     """str representing python sauce. and compiles it. assume that the code is
 
@@ -161,14 +173,17 @@ def prompt():
        init,
        Set trace function for active frame and then for all future frames.
 
-    note: modifying this function is risky. repl_loop relies on there being only
-    1 variable with a specific name. thi is used to identify if tracing should
-    be skipped so that seapie does not trace itself.
+    note: modifying this function is risky. repl_loop relies on there being
+    only 1 variable with a specific name. thi is used to identify if tracing
+    should be skipped so that seapie does not trace itself.
 
     note that this function does not assign any variables except for the hidden
     one.
 
     do-not-modify-this-string-it-is-used-by-seapie
+
+    it is essential that this function does not call more functions if trace
+    function is already repl_loop
 
     """
     if (trace := sys.gettrace()) is None:
@@ -176,7 +191,7 @@ def prompt():
         init_seapie_dir_and_reset_state()
         inspect.currentframe().f_back.f_trace = repl_loop
         sys.settrace(repl_loop)
-    elif trace is not repl_loop:
-        raise RuntimeError(f"Trace function already set: {trace}")
+    elif trace is repl_loop:
+        print("Ignoring call to seapie because seapie is already tracing.")
     else:
-        print("Ignoring call to prompt() because seapie is already tracing.")
+        raise RuntimeError(f"Trace function already set: {trace}")

@@ -43,8 +43,6 @@ def bang_handler(user_input, frame, event, arg):
     # These bangs do not contain arguments so using simple check is ok.
     if user_input in ("!q", "!quit"):
         return do_quit()
-    elif user_input in ("!s", "!step"):
-        return do_step()
     elif user_input in ("!r", "!run"):
         return do_run(frame)
     elif user_input in ("!h", "!help"):
@@ -69,8 +67,8 @@ def bang_handler(user_input, frame, event, arg):
     # These bangs contain arguments so must use startswith.
     elif user_input.startswith("!g") or user_input.startswith("!goto"):
         return do_goto(frame, original_input)
-    elif user_input.startswith("!c") or user_input.startswith("!condition"):
-        return do_condition(original_input)
+    elif user_input.startswith("!s") or user_input.startswith("!step"):
+        return do_step(original_input)
     elif user_input.startswith("!p") or user_input.startswith("!pickle"):
         return do_picle(frame, original_input)
     elif user_input.startswith("!l") or user_input.startswith("!load"):
@@ -118,18 +116,11 @@ def do_tb(frame, frames_to_hide):
 def do_frame(frame):
     """Add reference to base frame globals. The frame added is the one
     currently operated on by interpeter."""
-    frame_to_add = frame
-    global_frame = frame
-    while global_frame.f_back is not None:
-        global_frame = global_frame.f_back
-    module_globals = global_frame.f_globals
-    module_globals["FRAME"] = frame_to_add
+    frame.f_locals["__frame__"] = frame
     print(
-        "Added global variable 'FRAME' to root frame. The FRAME refers to"
-        f" {repr(frame.f_code.co_name)} frame {repr(frame)}. Remember to"
-        " delete the reference with 'del FRAME' to avoid circular references"
-        " or memory leaks when you are done with the frame. Use !up to go to"
-        " root frame and !down to get back where you were."
+        "Added local variable __frame__ to current frame. Remember to delete"
+        " the reference with 'del __frame__' when you are done with the frame"
+        " to avoid circular references or memory leaks."
     )
     return False
 
@@ -161,16 +152,16 @@ def do_goto(frame, user_input):
         return False
 
 
-def do_condition(user_input):
-    if STATE["callstack_escape_level"] != 0:
-        STATE["callstack_escape_level"] = 0
-        print("Resetting escape level to 0 before setting condition.")
-
+def do_step(user_input):
     command_parts = user_input.split(" ", 1)
-    if command_parts[0].lower() not in ("!c", "!condition"):
+
+    if command_parts[0].lower() not in ("!s", "!step"):
         print(f"Invalid bang {user_input}")
         return False
-    if len(command_parts) == 2:
+
+    if len(command_parts) == 1:  # simple step
+        return True
+    elif len(command_parts) == 2:  # step with a condition
         user_expression = command_parts[1]
         try:
             eval(user_expression)
@@ -181,15 +172,17 @@ def do_condition(user_input):
         except Exception:
             pass
 
+        # reset lvl
+        if STATE["callstack_escape_level"] != 0:
+            STATE["callstack_escape_level"] = 0
+            print("Resetting escape level to 0 before stepping.")
+
         STATE["step_until_expression"] = user_expression
         print(
             f"Stepping until 'bool(eval({repr(user_expression)}))' is True in"
             " active frame. All errors are ignored."
         )
         return True
-    else:
-        print("Missing expression. Use: !c x==0 or !condition x==0")
-        return False
 
 
 def do_echo(user_input):
@@ -315,13 +308,6 @@ def do_magic():
         )
         print(msg)
     return False
-
-
-def do_step():
-    if STATE["callstack_escape_level"] != 0:
-        STATE["callstack_escape_level"] = 0
-        print("Resetting escape level to 0 before stepping.")
-    return True
 
 
 def do_quit():

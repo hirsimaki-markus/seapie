@@ -4,7 +4,7 @@ import importmonkey
 
 importmonkey.add_path("../src")
 import seapie  # noqa: E402, F401  # Silence linting.
-from seapie import prompt
+from seapie import prompt  # noqa: E402, F401  # Silence linting.
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
     0 / 0
 
     x = 1
-    # lol()
+    lol()
 
     y = 2
     z = 3

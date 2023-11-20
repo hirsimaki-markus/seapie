@@ -53,6 +53,7 @@ def get_status(frame, event, arg):
 
     """
     lines = []
+    sep = "  │  "  # This is not the same symbol as |
 
     # get variables to use in lines
 
@@ -61,7 +62,7 @@ def get_status(frame, event, arg):
     # filename = frame.f_code.co_filename or "None"
     filename = frame.f_globals.get("__file__", "None")
 
-    scope = repr(frame.f_code.co_name) or "None"
+    # scope = repr(frame.f_code.co_name) or "None"
 
     # 0 callstack
     accum = []
@@ -69,7 +70,7 @@ def get_status(frame, event, arg):
     while callstack_frame:
         accum.append(callstack_frame.f_code.co_name)
         callstack_frame = callstack_frame.f_back
-    lines.append(" → ".join(reversed(accum)))
+    lines.append(f"callstack: {repr(list((reversed(accum))))}")
 
     # get lines 1-3
     lines.append(f"file: {repr(filename)}")  # 1
@@ -80,11 +81,19 @@ def get_status(frame, event, arg):
         current_line = repr(linecache.getline(filename, lineno).strip())
     except Exception:
         current_line = repr(None)
-    lines.append(f"source: {current_line}")
+    lines.append(f"lineno: {frame.f_lineno}{sep}source: {current_line}")
 
-    sep = "  │  "  # This is not the same symbol as |
-    lines.append(  # 3
-        f"lineno: {frame.f_lineno}{sep}scope: {scope}{sep}event: {repr(event)}"
+    if event == "return":  # 3
+        returnval = repr(arg)
+        exception = repr(None)
+    elif event == "exception":
+        returnval = repr(None)
+        exception = repr(arg[1])
+    else:
+        returnval = repr(None)
+        exception = repr(None)
+    lines.append(
+        f"event: {repr(event)}{sep}returnval: {returnval}{sep}exception: {exception}"
     )
 
     return lines
