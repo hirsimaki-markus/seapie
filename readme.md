@@ -1,7 +1,7 @@
 <div align="center">
     <h1>
-        <br>
         <img src="img/seapie.png" alt="seapie" height=100>
+        <br>
         <br>
     </h1>
     <br>
