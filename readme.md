@@ -1,12 +1,9 @@
 <div align="center">
     <h1>
         <br>
-        <br>
         <img src="img/seapie.png" alt="seapie" height=100>
         <br>
-        <br>
     </h1>
-    <br>
     <br>
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12.0-blue?logo=python&logoColor=white"/></a>
     &nbsp;
