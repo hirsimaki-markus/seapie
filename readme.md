@@ -2,7 +2,7 @@
     <h1>
         <br>
         <br>
-        <img src="img/seapie.png" alt="seapie">
+        <img src="img/seapie.png" alt="seapie" height=100>
         <br>
         <br>
     </h1>

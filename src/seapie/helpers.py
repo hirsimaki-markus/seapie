@@ -2,7 +2,6 @@
 
 import linecache
 import os
-import sys
 
 from .state import __STATE__, STATE
 from .version import __version__
