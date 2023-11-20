@@ -1,8 +1,6 @@
 <div align="center">
     <h1>
         <br>
-        seapie
-        <br>
         <br>
         <img src="img/seapie.png" alt="seapie">
         <br>
