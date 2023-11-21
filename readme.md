@@ -1,27 +1,34 @@
+<h1>seapie <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=25&duration=3000&pause=700&color=46BDFF&random=false&width=350&height=40&lines=is+intuitive;is+free+and+open+source;is+powerful+code+stepping;is+remote+debugging" alt="Typing SVG" /></a> </h1>
+
+
+
+<img src="./img/seapie.png" alt="seapie" width='350' align="right" border="5px solid #00000000">
+
+<p align="left">
+  <a href="https://pypi.org/project/seapie/"><img src="https://static.pepy.tech/badge/seapie"></a>
+  &nbsp;
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.12.0-blue?logo=python&logoColor=white"/></a>
+  &nbsp;
+  <a href="https://github.com/hirsimaki-markus/seapie"><img src="https://img.shields.io/pypi/v/seapie"></a>
+  &nbsp;
+  <a href="https://choosealicense.com/licenses/unlicense/"><img src="https://img.shields.io/badge/licence-The_Unlicence-purple"/></a>
+  &nbsp;
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/style-black-000000"/></a>
+  &nbsp;
+  <a href="https://en.wikipedia.org/wiki/Finland"><img src="https://img.shields.io/badge/made_with_%E2%9D%A4%20in-Finland-blue"/></a>
+  &nbsp;
+  <a href="https://github.com/hirsimaki-markus/seapie/graphs/contributors"><img src="https://img.shields.io/badge/contributions-welcome-blue"/></a>
+  &nbsp;
+  <a href="https://github.com/hirsimaki-markus/seapie"><img src="https://img.shields.io/badge/lines_of_code-1k-blue"/></a>
+  &nbsp;
+</p>
+
+
+
 <div align="center">
-    <h1>
-        <img src="img/seapie.png" alt="seapie" height=100>
-        <br>
-    </h1>
-    <br>
-    <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12.0-blue?logo=python&logoColor=white"/></a>
-    &nbsp;
-    <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Dependencies-None-blue"/></a>
-    &nbsp;
-    <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/Style-black-000000"/></a>
-    &nbsp;
-    <a href="https://choosealicense.com/licenses/unlicense/"><img src="https://img.shields.io/badge/Licence-The_Unlicence-purple"/></a>
-    &nbsp;
-    <a href="https://en.wikipedia.org/wiki/Finland"><img src="https://img.shields.io/badge/Made_with_%E2%9D%A4%20in-Finland-blue"/></a>
-    <br>
-    <br>
-    wololoo
-    <br>
-    lorem <code>ipsum</code> dolor sit amet
     <br>
     <br>
     <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
-    <br>
     <br>
     <br>
 </div>

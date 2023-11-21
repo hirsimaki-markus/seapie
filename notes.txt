@@ -2,22 +2,19 @@
 
 muista cltr+f jos massa replaceja, voi olla stringinä
 
+* piilota kaikki käyttäjältä paitsi prompt().
+  * oliko tää jo tehty?
+* pitääkö status bar laittaa hakemaan kaikki nimet samalla logiikalla kuin taika arvot?
+  tee funktio että fetch magic tms? ja paremmat nimet?
 * tee viimeistelyt nykyiseen ennenkuin remote debug tai alternate input funktio.
   nyt tärkee dokumentaatio kuntoon ja siivous, myöhemmin remote debug ja custom input ja muut
 * koneen todo loppuun
 * literally jokaisen doc stringin alkuun joku sama rimåu että tää ei oo user facing element.
   kaikki dokumentaatio on paikasa X ja siihen viittaus.
-* ainut exposattu funktio pitää olla prompt koska sitä vasten chekataan replissä. uus alias: set_trace
-* piilota kaikki käyttäjältä paitsi prompt().
-* pitääkö status bar laittaa hakemaan kaikki nimet samalla logiikalla kuin taika arvot?
 * tee jossain vaiheessa feature list vertaamalla pdb:hen
 * dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
-* PITÄISIKÖ STATUS BAARIN LUKEA TAIKAMUUTTUJAT SUORAAN??????????????
-  mutta sitten jos !m pois päältä niin ne ei edes näy kyllä että meh. tarviiko ne paremmat nimet niin ei
-  tarvi koskaan laittaa pois päältä? tai sit lukee suoraan ja !m saa lukemaan eri nimestä mihin kukaan ei osu?
-  tai eri paikasta? tää varmaan bugi altis
 * mieti jokaiselle Nonellle että kuuluuko siihen baarissa mieluumin error? tetty pitää olla yhteensopva taika muuttujien kansa kyllä
-* dokumentoi mille kaikille bangeille !e toimii. tldr: kaikki mikä muuttaa tilaa
+
 
 later:
     * dokumentoi pikle dokuihin sana variable.
@@ -43,6 +40,12 @@ later:
     * selitä vaikeempi steppaaminen niinkuin vaikka !s __lineno__ == 18 and __callstack__[-1] == "lol"
       * n stepin tekemiseen kannattaa käyttää !e
     * aseta paketin minimi python versio 3.8 koska walrus
+    * dokumentoi mille kaikille bangeille !e toimii. tldr: kaikki mikä muuttaa tilaa
+
+
+readmehen relase numero badge?
+readmehen size badge?
+johonki lyhenteen avaus
 
 remote notes:
     remote host should fail after N incorrect passwords.
