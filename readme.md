@@ -26,6 +26,7 @@
 
 <div align="center">
     <br>
+    <br>
     <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
     <br>
     <br>
