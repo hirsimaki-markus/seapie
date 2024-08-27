@@ -1,13 +1,4 @@
-# beginner friendly debugger with advanced stepping features and remote debugging support
 
-muista cltr+f jos massa replaceja, voi olla stringinä
-
-* piilota kaikki käyttäjältä paitsi prompt().
-  * oliko tää jo tehty?
-* pitääkö status bar laittaa hakemaan kaikki nimet samalla logiikalla kuin taika arvot?
-  tee funktio että fetch magic tms? ja paremmat nimet?
-* tee viimeistelyt nykyiseen ennenkuin remote debug tai alternate input funktio.
-  nyt tärkee dokumentaatio kuntoon ja siivous, myöhemmin remote debug ja custom input ja muut
 * koneen todo loppuun
 * literally jokaisen doc stringin alkuun joku sama rimåu että tää ei oo user facing element.
   kaikki dokumentaatio on paikasa X ja siihen viittaus.
@@ -15,9 +6,9 @@ muista cltr+f jos massa replaceja, voi olla stringinä
 * dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
 * mieti jokaiselle Nonellle että kuuluuko siihen baarissa mieluumin error? tetty pitää olla yhteensopva taika muuttujien kansa kyllä
 
+* help pitää selittää miksi (PEP 709) koska versio varoitus voi käskeä katsoa help
 
 later:
-    * dokumentoi pikle dokuihin sana variable.
     * ajatuksella rivi rivltä code review
     * dokumentoi kaikki taikamuuttujat mitkä on saatavilla ja että päivittyy per step. __file__ muutenkin kyl.
       päivittyy itseasiassa vielä useammin koska !u esim muuttaa ne
@@ -39,13 +30,26 @@ later:
        * selitä tyylillä että ensin __file__ esimerkkinä !c komennossa ja sit muut
     * selitä vaikeempi steppaaminen niinkuin vaikka !s __lineno__ == 18 and __callstack__[-1] == "lol"
       * n stepin tekemiseen kannattaa käyttää !e
-    * aseta paketin minimi python versio 3.8 koska walrus
-    * dokumentoi mille kaikille bangeille !e toimii. tldr: kaikki mikä muuttaa tilaa
 
+
+
+seapie versio herja pitää antaa startissa eikä importissa, ja muista fuse
 
 readmehen relase numero badge?
 readmehen size badge?
 johonki lyhenteen avaus
+lisää siihen herjaan että älä aja interaktiivisesti ihan minimi esimerkki pyton filestä
+3.12 recommended but not necessary siihen herjaan
+!w enemmän rivejä
+https://www.slant.co/topics/2691/~best-python-debuggers
+https://python.libhunt.com/ipdb-alternatives
+https://wiki.python.org/moin/PythonDebuggingTools
+https://stackoverflow.com/questions/477193/suggestions-for-python-debugging-tools
+  edit
+  pudb malli. esim maininta graphical
+status baariin enemmän source rivejä
+variable watchlist
+herja että 3.12 !!or newer!! recommended ja vain kerran tää printti
 
 remote notes:
     remote host should fail after N incorrect passwords.
@@ -111,3 +115,55 @@ wanha:
     * Breakpoint your currently onging tracing: step until next ```seapie()``` by using ```!run``` or whatever suits you
     * Send me email or any message anywhere if you have suggestions
     Distributed under [The Unlicense](https://choosealicense.com/licenses/unlicense/) <img src="./images/unlicense.png" width="12" height="12"/> by Markus Hirsimäki in 2019 and 2020
+
+
+
+
+"""!u ja !d vois sanoa missä framessa oot?
+
+ja pitäskö info printtaa aina? hmhmmm.."""
+
+ja tee niin että jokainen bang tarkistaa voiko ajaa et onko escape lvl oikein
+
+            # todo onko hide lvlit oikein
+
+
+
+puuttuu:
+        #if seapie.helpers.step_until_condition(working_f): return repl
+
+
+simple, elegant, intuitive. unlike pdb
+powerful stepping
+
+tee args raises etc dokumentaatio
+tarkista että kaikki error handlerit toimii oikein ja että ne piilottaa framet oikein
+yritä poistaa callstack escape lvl
+
+up ja down vie nyt loputtmasti ylös tai alas. riski. current woing f nimi
+pitäs laittaa handlereihin. ja get working f ja se leveli pois.
+liima invert coloria printteihi?
+toimiiko mimic traceback oikein jos on up ja down stepattu? ja entä !t että onko eroa raiseen tai legit erroriin
+up ja down vois printtaa stäkin. ehkä invert se valittu.
+
+cpython check johonki? tai ehkä compability merkintä tomliin?
+
+
+_ ei oo asetettu, eikä myöskään __ ja ___
+IPython: The IPython environment injects several variables, such as _, __, and ___ to represent the last, second to last, and third to last output results, respectively.
+Jupyter Notebook: Uses variables like _i, _ii, etc., to store input history, and _oh for output history.
+
+
+
+
+repl vois olla luokan callable, sitten input current frame ja kaikki olis selffissä.
+tai sit ei. turhaa kompleksisuutta?
+
+# poista STATE kokonaan, inject magic vain enää tarvii selitä
+# tee toimiva command map. passaa kaikille valmiikski parsittu extra arg jos tarvii bangille
+
+post mortem tuki?
+
+frame ja working frame pitäs olla yhtenäisiä
+
+tarkista kaikkien printtien tarve reagoida terminaalin kokoon

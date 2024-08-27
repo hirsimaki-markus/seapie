@@ -1,8 +1,0 @@
-# The package versions used are pinned here for reference
-# but any newer version will probably work. There are no
-# user requirements as in "requirements.txt".
-black==23.10.1
-flake8==6.1.0
-build==1.0.3
-twine==4.0.2
-importmonkey==1.0.0

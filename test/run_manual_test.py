@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
-import importmonkey
 
-importmonkey.add_path("../src")
-import seapie  # noqa: E402, F401  # Silence linting.
-from seapie import prompt  # noqa: E402, F401  # Silence linting.
+
+from seapie import set_trace  # noqa: E402, F401  # Silence linting.
+
+
+def say_goodbye():
+    print("Goodbye, World!")
+
+# Register the function to be called on exit
+#atexit.register(say_goodbye)
 
 
 def main():
@@ -19,9 +24,15 @@ def main():
         return "nice"
 
     # [seapie.prompt() for i in "asd"]
-    seapie.prompt()
-    seapie.prompt()
-    0 / 0
+    set_trace()
+    #prompt()
+    #self = exit
+
+    "asd"
+    "asd"
+    #os._exit(1)
+    exit()
+    # 0 / 0
 
     x = 1
     lol()

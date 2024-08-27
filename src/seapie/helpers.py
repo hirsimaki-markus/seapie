@@ -1,138 +1,52 @@
 """helper functions that do not belong in other places"""
 
+import contextlib
 import linecache
-import os
+import platform
+import sys
+import traceback
 
-from .state import __STATE__, STATE
-from .version import __version__
-
-
-def escape_frame(frame):
-    """Escapes n frames up if required by state
-
-    returns the "active" frame. ehkä nimeä tänne active frame?
-    """
-    # original_frame = frame
-    for _ in range(STATE["callstack_escape_level"]):
-        if frame.f_back is None:  # Check if end of stack reached
-            # frame = original_frame
-            STATE["callstack_escape_level"] -= 1
-            print(
-                "Callstack was too short for new escape level. Decrementing"
-                " level by one. Level is now"
-                f" {STATE['callstack_escape_level']}."
-            )
-            # break
-        else:
-            frame = frame.f_back
-    return frame
+import seapie.helpers
 
 
-def step_until_condition(frame):
-    """Automatically steps if current state have an expression to check"""
-    user_expression = STATE["step_until_expression"]
-    if user_expression is None:  # no need to step. no expression set.
-        return False
-    try:
-        result = bool(eval(user_expression, frame.f_globals, frame.f_locals))
-    except NameError:  # ignore name errors, keep stepping.
-        return True
-    except Exception as e:
-        print(
-            "Conditional step failed with unexpected error:"
-            f" {str(e)}. Clearing the expression."
-        )
-        STATE["step_until_expression"] = None
-        return False
-    else:
-        if result:
-            STATE["step_until_expression"] = None
-            return False  # can stop stepping
-        else:
-            return True
+class Step(BaseException):
+    """Used to trigger step in seapie repl loop."""
+
+class Continue(BaseException):
+    """Used to trigger continue in seapie repl loop"""
 
 
-def check_rw_access():
-    """Checks read/write access on the files created in the
-    init_seapie_directory() function.
-    """
-    path = os.path.expanduser("~")  # Get the writable path
+@contextlib.contextmanager
+def handle_input_exceptions(working_f):
+    """Handles possible errors produced by get_repl_input. Continue exception signals control flow to repl."""
+    try:  # Code from the with statement gets executed here in yield.
+        yield
+    except EOFError:  # Mimic EOF behaviour from ctrl+d / ctrl+z by user in input.
+        exit(print())  # Print a newline before exit. Return value doesn't get printed.
+    except KeyboardInterrupt:  # Mimic kbint from ctrl+c by user in input.
+        seapie.helpers.mimic_traceback(working_f, frames_to_hide=2)
+        raise Continue
+    except (SyntaxError, ValueError, OverflowError):  # Parsing fail in get_repl_input.
+        seapie.helpers.mimic_traceback(working_f, frames_to_hide=5)
+        raise Continue
 
-    # Check read/write access on the .seapie directory
-    seapie_dir = os.path.join(path, ".seapie")
-    if not os.access(seapie_dir, os.R_OK | os.W_OK):
-        print("No read/write access on .seapie directory:", seapie_dir)
-        print("Aborting.")
-        exit()
-
-    # Check read/write access on the pickles, history, and snippets directories
-    subdirectories = ["pickles", "history", "snippets"]
-    for subdir in subdirectories:
-        subdir_path = os.path.join(seapie_dir, subdir)
-        if not os.access(subdir_path, os.R_OK | os.W_OK):
-            print("No read/write access on", subdir, "directory:", subdir_path)
-            print("Aborting.")
-            exit()
-
-    # Check read/write access on the version file
-    version_file = os.path.join(seapie_dir, "version")
-    if not os.access(version_file, os.R_OK | os.W_OK):
-        print("No read/write access on version file:", version_file)
-        print("Aborting.")
-        exit()
-
-
-def create_seapie_dir():
-    """Creates"""
-    path = os.path.expanduser("~")  # Get the writable path
-
-    # Create the .seapie directory if it doesn't exist
-    seapie_dir = os.path.join(path, ".seapie")
-    if not os.path.exists(seapie_dir):
-        try:
-            os.makedirs(seapie_dir)
-        except OSError as e:
-            print(f"Error creating .seapie directory: {e}")
-            return
-        else:
-            print("Initialized .seapie directory in", path)
-
-    # Create the pickles, history, and snippets directories if they don't exist
-    subdirectories = ["pickles", "history", "snippets"]
-    for subdir in subdirectories:
-        subdir_path = os.path.join(seapie_dir, subdir)
-        if not os.path.exists(subdir_path):
-            try:
-                os.makedirs(subdir_path)
-            except OSError as e:
-                print(f"Error creating {subdir} directory: {e}")
-                return
-            else:
-                print("Initialized .seapie subdirectory in", subdir_path)
-
-    # Create the version file in the .seapie directory
-    version_file = os.path.join(seapie_dir, "version")
-    if not os.path.exists(version_file):
-        try:
-            with open(version_file, "w") as f:
-                f.write(__version__)
-        except OSError as e:
-            print(f"Error creating version file: {e}")
-            return
-        else:
-            print("Initialized .seapie version file in", version_file)
+@contextlib.contextmanager
+def handle_exec_exceptions(working_f):
+    """Handles possible errors produced by exec_input. Continue exception signals control flow to repl."""
+    try:  # Code from the with statement gets executed here in yield.
+        yield
+    except (MemoryError, SystemExit):  # Must reraise critical errors.
+        raise
+    except seapie.helpers.Step:  # A handler signaled that repl loop mus step.
+        raise  # Reraise the exception so that it can propagate. prevent getting caught in baseexception
+    except seapie.helpers.Continue:
+        raise
+    except BaseException:  # Show trace for misc. exec_input errors like invalid syntax.
+        seapie.helpers.mimic_traceback(working_f, 1)
 
 
-def init_seapie_dir_and_reset_state():
-    """Resets current state, creates seapie dir if not exists and ensures
-    rw
-    """
-    STATE.update(__STATE__)
-    create_seapie_dir()
-    check_rw_access()
 
-
-def update_magic_vars(current_frame, event, arg):
+def inject_magic_vars(current_frame, event, arg):
     # inject useful variables to the frame. this change should propagate
     # since we are in trace function. and running 3.12.
     # this must happen before exec (i think)
@@ -140,8 +54,6 @@ def update_magic_vars(current_frame, event, arg):
     # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),
     # ctypes.c_int(1))
     # maybe. or it works because we are in the trace function.
-    if not STATE["inject_magic"]:
-        return
 
     accum = []
     callstack_frame = current_frame
@@ -175,20 +87,48 @@ def update_magic_vars(current_frame, event, arg):
         current_frame.f_locals["__exception__"] = arg[1]
     else:
         current_frame.f_locals["__exception__"] = None
-    # NOTE: THE CONNECTION BETWEEN THESE MAGIC VALUES AND THE STATUS BAR
-    # IS MAINTAINED MANUALLY IN SOURCE. THESE ARE NOT PASSED AS ARGS.
-    # i.e: status bar could use different names and definitions.
 
 
-def print_start_banner():
-    invert = "\x1b[7m"  # invert color
-    reset = "\x1b[0m"  # reset color
-    banner = f"""
-                {invert} ╒════════════════════╕ {reset}
-                {invert}    ┏┓ ┏┓ ┏┓ ┏┓  ╻ ┏┓   {reset}
-                {invert}    ┗┓ ┣┛ ┏┫ ┣┛ ╺┓ ┣┛   {reset}
-                {invert}    ┗┛ ┗┛ ┗┛ ╹   ╹ ┗┛   {reset}
-                {invert} ╘════════════════════╛ {reset}
+def show_banner():
+    from seapie import __version__ as version  # Avoid circular import at startup.
+    if hasattr(sys, "ps1"):
+        print("Warning: using seapie outside of scripts can cause undefined behaviour.")
+    print(f'Starting seapie {version} on {platform.system()}. Type "!h" for help.')
+
+
+def mimic_traceback(frame, frames_to_hide):
     """
-    print(banner)
-    print("Enter !help or !h for help. See status bar at the top for info.")
+    mimics interactive interpreter traceback print but hides seapie
+
+    if exception occurs in seapie, frames_to_hide tells how many seapie
+    relatd frames to hide from the traceback found in exception.
+    this is joined with other frames found with tb.extact_stack to show
+    all frames from original source and frames from input but not seape itself
+    frames to hide is how many frames to hide from the middle of traceback to hdie
+    seapie
+    """
+
+    traceback_exc = traceback.TracebackException(*sys.exc_info())
+
+    # seapie would be present here so we hide it from the middle of the stack
+    # Exclude the frames occupied by the debugger
+    tb_exc_stack_filtered = traceback_exc.stack[frames_to_hide:]
+
+    # we have to use both traceback.extract_stack(frame) and
+    # traceback_exc.stack
+    # because otherwise frames created in seapie repl would not be visible
+    # or frames created in original source would not be visible
+    tb_frames = traceback.extract_stack(frame) + tb_exc_stack_filtered
+
+    # Format the filtered traceback
+    formatted_traceback = "".join(traceback.format_list(tb_frames))
+
+    print("Traceback (most recent call last):")  # Print header.
+    print(formatted_traceback, end="")  # Print traceback,
+
+    exc_type, exc_val, _exc_tb = sys.exc_info()  # Get active exception if any.
+    if exc_type is not None and exc_val is not None:  # Print active exception.
+        if str(exc_val):  # str casting is necessary for correct truth checking.
+            print(f"{exc_type.__name__}: {exc_val}", file=sys.stderr)
+        else:
+            print(exc_type.__name__, file=sys.stderr)

@@ -9,64 +9,15 @@ a state stored in state.py
 seapie is intended to be used in scripts, not in the interactive interpreter
 """
 
-import sys
 
-from .repl import prompt, true_exec
-from .version import __version__  # noqa: F401  # Silence linting.
+from seapie.repl import set_trace
 
+# __version__ is single source of truth for packaging; <major>.<minor>.<patch> is used.
+# Trailing/leading zeroes are not allowed. Lone zeroes (such as in 0.1.0) are allowed.
+# When incrementing any of major, minor, patch, reset other numbers after it to zero.
+# A number with trailing zero is skipped (eg. 0.10.0) and incremented more (eg. 0.11.0).
+__version__ = "3.0.2"
 __author__ = "Markus Hirsimäki"
 __copyright__ = "This work is dedicated to public domain under The Unlicense."
-__license__ = "The Unlicense (https://choosealicense.com/licenses/unlicense/)"
-__all__ = ["prompt", "true_exec"]
-
-if hasattr(sys, "ps1"):
-    msg = (
-        "\nUsing seapie in interactive interpreter is not supported. See"
-        " help(seapie) for more details. If you are just trying things out"
-        " it's easiest to make a script and import seapie there.\n"
-    )
-    print(msg)
-
-if (sys.version_info.major == 3) and (sys.version_info.minor < 12):
-    print("\nPython 3.12.0 or later is recommended for seapie (PEP 709).\n")
-
-
-asd = """
-eai
-█▀ █▀ █▀█ █▀█ █ █▀
-▀█ █▀ █▀█ █▀▀ █ █▀
-▀▀ ▀▀ ▀ ▀ ▀   ▀ ▀▀
-█▀ █▀ █▀█ █▀█ █ █▀
-▀█ █▀ ▌▀█ █▀▀ █ █▀
-▀▀ ▀▀ ▌ ▀ ▀   ▀ ▀▀
-box drawing heavy
-▖▗ ▘▝ ▙ ▛ ▜ ▟ ▞ ▚ ▀ ▄
-▄▄
-▌▐
-aaa
-▛   ▛▜
-▟   ▛▜ ▙ ▌▐▌▐ ▙▐
-
-╝  ╗  ╔  ╚  ╣  ╩  ╦  ╠  ═  ║  ╬
-┘  ┐  ┌  └  ┤  ┴  ┬  ├  ─  │  ┼
-┌┐ ┌ ┌┐ ┌┐ ┬
-└┐ ├ ┤ ├┘ │
-└┘ └ ╹╵
-      ╻
-      ┗
-╴  ╵  ╶  ╷  ╸  ╹  ╺  ╻
-
-
-┏┓ ┏┓ ┏┓ ┏┓  ╻ ┏┓
-┗┓ ┣┛ ┏┫ ┣┛ ╺┓ ┣┛
-┗┛ ┗┛ ┗┛ ╹   ╹ ┗┛
-╻╺╹╸
-╻╺╹╸╋
-┃
-┫
-━╺
-╹╸╸╻
- ┏╸┏
-╺┛ ┗╸
-╻ ┃╸
-"""
+__license__ = "The Unlicense"
+__all__ = ["set_trace"]

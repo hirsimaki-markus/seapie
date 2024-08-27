@@ -1,0 +1,30 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+name = "seapie"
+description = "Intuitive replacemnt for the built-in pdb debugger"
+authors = [{name = "Markus Hirsimäki"}]
+license = {text = "The Unlicense"}
+readme = "readme.md"
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+    "Operating System :: OS Independent"
+]
+
+[project.optional-dependencies]
+dev = ["build", "twine", "ruff"]
+
+[project.urls]
+homepage = "https://github.com/hirsimaki-markus/seapie"
+issues = "https://github.com/hirsimaki-markus/seapie/issues"
+license = "https://choosealicense.com/licenses/unlicense/"
+
+[tool.setuptools]
+packages = ["seapie"]
+package-dir = { "" = "src" }
+dynamic = { version = {attr = "seapie.__version__" } }
