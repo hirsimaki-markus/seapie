@@ -1,13 +1,35 @@
 """helper functions that do not belong in other places"""
 
+import builtins
 import contextlib
+import dataclasses
+import inspect
 import linecache
+import os
 import platform
+import pprint
+import shutil
 import sys
 import traceback
+import types
+import typing
 
 import seapie.helpers
+import seapie.prompt
 
+
+@dataclasses.dataclass
+class TraceEventInfo:
+    exception: str
+    lineno: int
+    source: str
+    event: str
+    stack: typing.List[str]
+    frame: types.FrameType
+
+
+class Skip(BaseException):
+    """Used to trigger skip in seapie repl loop."""
 
 class Step(BaseException):
     """Used to trigger step in seapie repl loop."""
@@ -15,120 +37,163 @@ class Step(BaseException):
 class Continue(BaseException):
     """Used to trigger continue in seapie repl loop"""
 
+class Frame(BaseException):
+    """Used to trigger ascend/descend in seapie repl loop"""
+
+
+def invert(text):
+    return f"\033[7m{text}\033[0m"
+
 
 @contextlib.contextmanager
 def handle_input_exceptions(working_f):
-    """Handles possible errors produced by get_repl_input. Continue exception signals control flow to repl."""
+    """Handles possible errors produced by get_repl_input. Continue exception signals control flow to repl.
+    exceptions that wont be handled: seapie control flow exceptions. maybe something else?
+    """
     try:  # Code from the with statement gets executed here in yield.
         yield
     except EOFError:  # Mimic EOF behaviour from ctrl+d / ctrl+z by user in input.
         exit(print())  # Print a newline before exit. Return value doesn't get printed.
     except KeyboardInterrupt:  # Mimic kbint from ctrl+c by user in input.
-        seapie.helpers.mimic_traceback(working_f, frames_to_hide=2)
+        print()
+        seapie.helpers.show_traceback(frames_to_hide=4)
         raise Continue
     except (SyntaxError, ValueError, OverflowError):  # Parsing fail in get_repl_input.
-        seapie.helpers.mimic_traceback(working_f, frames_to_hide=5)
+        seapie.helpers.show_traceback(frames_to_hide=4)
         raise Continue
 
 @contextlib.contextmanager
 def handle_exec_exceptions(working_f):
-    """Handles possible errors produced by exec_input. Continue exception signals control flow to repl."""
+    """Handles possible errors produced by exec_input. Continue exception signals control flow to repl.
+    exceptions that wont be handled: seapie control flow exceptions. maybe something else?"""
     try:  # Code from the with statement gets executed here in yield.
         yield
     except (MemoryError, SystemExit):  # Must reraise critical errors.
         raise
-    except seapie.helpers.Step:  # A handler signaled that repl loop mus step.
-        raise  # Reraise the exception so that it can propagate. prevent getting caught in baseexception
-    except seapie.helpers.Continue:
-        raise
+    except (seapie.helpers.Step, seapie.helpers.Continue, seapie.helpers.Frame):
+        raise  # Allow seapie contol flow exceptions to propagate instead of catching.
     except BaseException:  # Show trace for misc. exec_input errors like invalid syntax.
-        seapie.helpers.mimic_traceback(working_f, 1)
+        seapie.helpers.show_traceback(frames_to_hide=4)
 
 
 
-def inject_magic_vars(current_frame, event, arg):
-    # inject useful variables to the frame. this change should propagate
-    # since we are in trace function. and running 3.12.
-    # this must happen before exec (i think)
-    # otherwise we would need
-    # ctypes.pythonapi.PyFrame_LocalsToFast(ctypes.py_object(frame),
-    # ctypes.c_int(1))
-    # maybe. or it works because we are in the trace function.
+def inject_magic_vars(frame, event, arg):
+    import ctypes
 
-    accum = []
-    callstack_frame = current_frame
-    while callstack_frame:
-        accum.append(callstack_frame.f_code.co_name)
-        callstack_frame = callstack_frame.f_back
+    class WeakFrame:
+        def __init__(self, frame):
+            # Store the id of the frame (which is the memory address)
+            self.frame_id = id(frame)
 
-    current_frame.f_locals["__callstack__"] = list(reversed(accum))
+        def get(self):
+            # Attempt to retrieve the frame using its id
+            frame = ctypes.cast(self.frame_id, ctypes.py_object).value
+            return frame if self._is_frame_alive(frame) else None
 
-    current_frame.f_locals["__lineno__"] = current_frame.f_lineno
+        def _is_frame_alive(self, frame):
+            # Check if the retrieved object is indeed a frame and hasn't been replaced
+            return isinstance(frame, types.FrameType)
 
-    # current_frame.f_locals["__scope__"] = current_frame.f_code.co_name
+        def __getattr__(self, attr):
+            # When the WeakFrame instance is accessed, return the frame
+            frame = self.get()
+            if frame is None:
+                raise ReferenceError("The referenced frame has been garbage collected.")
+            return getattr(frame, attr)
 
-    current_frame.f_locals["__event__"] = event
-
-    try:
-        filename = current_frame.f_code.co_filename
-        lineno = current_frame.f_lineno
-        current_line = linecache.getline(filename, lineno)
-        source = current_line.strip()
-    except Exception:
-        source = None
-    current_frame.f_locals["__source__"] = source
-
-    if event == "return":
-        current_frame.f_locals["__returnval__"] = arg
-    else:
-        current_frame.f_locals["__returnval__"] = None
-
-    if event == "exception":
-        current_frame.f_locals["__exception__"] = arg[1]
-    else:
-        current_frame.f_locals["__exception__"] = None
+        def __repr__(self):
+            # Optional: Provide a meaningful string representation
+            frame = self.get()
+            return f"WeakFrame({frame})" if frame else "WeakFrame(None)"
 
 
-def show_banner():
-    from seapie import __version__ as version  # Avoid circular import at startup.
-    if hasattr(sys, "ps1"):
-        print("Warning: using seapie outside of scripts can cause undefined behaviour.")
-    print(f'Starting seapie {version} on {platform.system()}. Type "!h" for help.')
+    builtins.___ = TraceEventInfo(
+        stack=[f_inf.function for f_inf in inspect.getouterframes(frame, context=1)],
+        source=linecache.getline(frame.f_code.co_filename, frame.f_lineno).strip(),
+        lineno=frame.f_lineno,
+        event=event,
+        exception=arg[0].__name__ if event == "exception" else "",
+        frame=WeakFrame(frame),
+    )
+    linecache.clearcache()
 
 
-def mimic_traceback(frame, frames_to_hide):
+
+
+
+
+def show_traceback(frames_to_hide):
+    """inspect.stack for frames, traceback.extract_stack for formatted tb"""
+    print("Traceback (most recent call last):", file=sys.stderr)
+    print("".join(traceback.format_stack()[:-frames_to_hide]), end="", file=sys.stderr)
+    ex_type, ex, _ex_tb = sys.exc_info() # Print the exception, if any.
+    if ex_type is not None:
+        print(f"{ex_type.__name__}{': ' + str(ex) if str(ex) else ''}", file=sys.stderr)
+
+def show_callstack(frame):
+    """similar to show tb but easier to read at glance, doesnt show errors."""
+    print("Callstack (selected frame highlighted):")
+    for frame_info in reversed(inspect.stack()[4:]):
+        printable = f"<Line {frame_info.lineno} in <{frame_info.function}> at {os.path.basename(frame_info.filename)}>"[:shutil.get_terminal_size()[0]]
+        if frame == frame_info.frame:
+            printable = seapie.helpers.invert(printable)
+        print(f"  {printable}")
+
+def show_source(frame):
+    # Print 13 source line surrounding current line
+    all_lines = linecache.getlines(frame.f_code.co_filename)  # Get all source lines.
+    linecache.clearcache()
+    start_line = max(frame.f_lineno - 13, 1)  # Avoid negative lines with max.
+    end_line = min(frame.f_lineno + 13, len(all_lines))  # min avoids lines past EOF.
+    print(f"Source lines (selected frame) (next line: {frame.f_lineno}):")
+    for lineno in range(start_line, end_line + 1):
+        formatted_lineno = f" {str(lineno).rjust(len(str(end_line)))} "
+        line_content = all_lines[lineno - 1].rstrip()
+        formatted_lineno = formatted_lineno if lineno != frame.f_lineno else invert(formatted_lineno) # Mark next line.
+        print(f" {formatted_lineno} {line_content}"[:shutil.get_terminal_size()[0]])
+
+
+def show_info(frame, event, arg):
+    print(f"Event: {event}")
+    # print("Tracing information:")
+    # print(f"    e: {repr(event)}")
+    # if event == "exception":
+    #     argument = (arg[0].__name__, str(arg[1]), "<traceback object>")
+    # else:
+    #     argument = repr(arg)
+    # print(f"    e argument: {argument}")
+    # print()
+
+
+def displayhook_factory(pretty):
+    """Creates a displayhook to handle _ in the prompt. Supports prettyprinting."""
+    def displayhook(item):
+        if item is not None:
+            pprint.pp(item, width=shutil.get_terminal_size()[0]-1) if pretty else print(item)
+            builtins._ = item
+    return displayhook
+
+
+def set_trace():
     """
-    mimics interactive interpreter traceback print but hides seapie
-
-    if exception occurs in seapie, frames_to_hide tells how many seapie
-    relatd frames to hide from the traceback found in exception.
-    this is joined with other frames found with tb.extact_stack to show
-    all frames from original source and frames from input but not seape itself
-    frames to hide is how many frames to hide from the middle of traceback to hdie
-    seapie
+    essentially equivalent of pdb.set_trace function.  set traceto repl_loop.
     """
 
-    traceback_exc = traceback.TracebackException(*sys.exc_info())
+    if sys.gettrace() is None:
+        try:
+            import readline  # noqa # readline (if available) needed for line editing.
+        finally:
+            sys.displayhook = seapie.helpers.displayhook_factory(pretty=True)
 
-    # seapie would be present here so we hide it from the middle of the stack
-    # Exclude the frames occupied by the debugger
-    tb_exc_stack_filtered = traceback_exc.stack[frames_to_hide:]
+            if hasattr(sys, "ps1"):
+                print("Warning: using seapie outside of scripts can cause undefined behaviour.")
+            print(f'Starting seapie {seapie.__version__} on {platform.system()}. Type "!h" for help.')
 
-    # we have to use both traceback.extract_stack(frame) and
-    # traceback_exc.stack
-    # because otherwise frames created in seapie repl would not be visible
-    # or frames created in original source would not be visible
-    tb_frames = traceback.extract_stack(frame) + tb_exc_stack_filtered
+            sys.settrace(seapie.prompt.repl)
+            frame = sys._getframe(1)
+            while frame:
+                frame.f_trace = seapie.prompt.repl
+                frame = frame.f_back
+            # using inspect module here seems to cause unexpected behaviour
+            # inspect.currentframe() returns same frame but does not work here, it doesnt seem to return immediately
 
-    # Format the filtered traceback
-    formatted_traceback = "".join(traceback.format_list(tb_frames))
-
-    print("Traceback (most recent call last):")  # Print header.
-    print(formatted_traceback, end="")  # Print traceback,
-
-    exc_type, exc_val, _exc_tb = sys.exc_info()  # Get active exception if any.
-    if exc_type is not None and exc_val is not None:  # Print active exception.
-        if str(exc_val):  # str casting is necessary for correct truth checking.
-            print(f"{exc_type.__name__}: {exc_val}", file=sys.stderr)
-        else:
-            print(exc_type.__name__, file=sys.stderr)

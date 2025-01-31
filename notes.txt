@@ -1,18 +1,14 @@
 
 * koneen todo loppuun
-* literally jokaisen doc stringin alkuun joku sama rimåu että tää ei oo user facing element.
-  kaikki dokumentaatio on paikasa X ja siihen viittaus.
 * tee jossain vaiheessa feature list vertaamalla pdb:hen
 * dokumentoi että seapie yrittää piilottaa itsensä tracebakeistä mitä se printtaa vaikka seapie asuukin samassa stakisa kuin kaikki muu. sys._getframe(0) on seapie eikä ohjelma.
 * mieti jokaiselle Nonellle että kuuluuko siihen baarissa mieluumin error? tetty pitää olla yhteensopva taika muuttujien kansa kyllä
 
-* help pitää selittää miksi (PEP 709) koska versio varoitus voi käskeä katsoa help
 
 later:
     * ajatuksella rivi rivltä code review
     * dokumentoi kaikki taikamuuttujat mitkä on saatavilla ja että päivittyy per step. __file__ muutenkin kyl.
       päivittyy itseasiassa vielä useammin koska !u esim muuttaa ne
-    * dokumentoi varoitus että !c voi tehdä side efektejä koska evali
     * dokumentoi että objektit varastoidaan pikleina levylle ja piklet ei oo turvallisia.
     * getchistä paketti githubiin? vai tee sittenkin oma input koska historia?
     * tarkista että jokainen bangi käyttää returnissa aina jotain validia palautus arvoa....
@@ -26,10 +22,8 @@ later:
     * kaivele kaikki pyton discordit läpit showcase kanavien varalle kun valmis
     * reddit ja hacker news postit
     * tämä fixaa kaksi tyhmää vikaa mitä pdb:ssä on: pdb kaatuu jos tracetat exit() ja tää ei trace error printtausta
-    * selitä taikamuuttujat
-       * selitä tyylillä että ensin __file__ esimerkkinä !c komennossa ja sit muut
-    * selitä vaikeempi steppaaminen niinkuin vaikka !s __lineno__ == 18 and __callstack__[-1] == "lol"
-      * n stepin tekemiseen kannattaa käyttää !e
+    * selitä taikamuuttujat ___ jos se edes on mukana
+
 
 
 
@@ -119,7 +113,6 @@ wanha:
 
 
 
-"""!u ja !d vois sanoa missä framessa oot?
 
 ja pitäskö info printtaa aina? hmhmmm.."""
 
@@ -146,7 +139,6 @@ liima invert coloria printteihi?
 toimiiko mimic traceback oikein jos on up ja down stepattu? ja entä !t että onko eroa raiseen tai legit erroriin
 up ja down vois printtaa stäkin. ehkä invert se valittu.
 
-cpython check johonki? tai ehkä compability merkintä tomliin?
 
 
 _ ei oo asetettu, eikä myöskään __ ja ___
@@ -154,6 +146,7 @@ IPython: The IPython environment injects several variables, such as _, __, and _
 Jupyter Notebook: Uses variables like _i, _ii, etc., to store input history, and _oh for output history.
 
 
+the spec is that it should work like the interpreter. if you find inconsistencies, report them.
 
 
 repl vois olla luokan callable, sitten input current frame ja kaikki olis selffissä.
@@ -162,8 +155,83 @@ tai sit ei. turhaa kompleksisuutta?
 # poista STATE kokonaan, inject magic vain enää tarvii selitä
 # tee toimiva command map. passaa kaikille valmiikski parsittu extra arg jos tarvii bangille
 
-post mortem tuki?
 
 frame ja working frame pitäs olla yhtenäisiä
 
 tarkista kaikkien printtien tarve reagoida terminaalin kokoon
+
+
+
+
+
+
+refaktoroi
+e, r, h, i, s, t, f, c, g
+exit, run, help, info, step, traceback, callstack, goto
+      ---                               ---------
+
+-->
+quit, exit, continue, help, info, step, traceback, up, down, reset, goto
+----        ---------                              --  ----  -----
+
+ctrlf printit, pisteet paikalleen? tai ei minnekkään?
+
+laita built in pretty print käyttöön ja vipu tarjolle?
+orig_displayhook = sys.displayhook
+
+def myhook(value):
+    if value != None:
+        __builtins__._ = value
+        pprint.pprint(value)
+
+
+
+
+chatgpt postmortem.
+
+
+
+!exit
+!quit?
+
+!step
+!run
+
+!goto
+!info(+!traceback)
+!prettyprint
+
+!ascend
+!descend # ei tarvi reset. step palauttaa aina uuden framen.
+
+
+!until <source>
+!until 123
+!until call
+!until line
+!until return
+!until exception
+
+
+!frame? (muttakun voi !a ja !d)
+
+
+peru että kaikissa handlereissä on f e a eikä koko nimet. hirvee lukee.
+handlers file on rikki jossai? ja !e ei toimi.
+
+steppi tulostamaan missä ollaan
+c call tracing?
+multihread support?
+
+
+
+
+refaktorointi: handle_input repliin
+
+unlike pdb, can actually modify state of the script arbitrarily
+
+
+
+
+
+todo: !until vois korvata replin toisella funktiolla hetkeksi?

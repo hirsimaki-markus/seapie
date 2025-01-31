@@ -1,50 +1,44 @@
 #!/usr/bin/env python3
+import sys
+
+import seapie
+import seapie.prompt  # noqa: E402, F401  # Silence linting.
+from seapie import set_trace
 
 
+def level2():
 
-from seapie import set_trace  # noqa: E402, F401  # Silence linting.
+    ##sys.settrace(seapie.repl.repl)
+    #sys._getframe(0).f_trace = seapie.repl.repl
 
+    print("Goodbye, World!")
+    return "byeee"
 
-def say_goodbye():
+def level1():
+    set_trace()
+    #breakpoint()
     print("Goodbye, World!")
 
-# Register the function to be called on exit
-#atexit.register(say_goodbye)
+    level2()
+    #breakpoint()
+
+    return "byeee"
 
 
 def main():
-    # while True:
-    #    print("got:", repr(tools.read_one_interpreter_input()))
 
-    def lol():
-        for i in range(2):
-            kissa = "kissa"
-            x = "x"
-            print(x, kissa)
-        return "nice"
 
-    # [seapie.prompt() for i in "asd"]
-    set_trace()
-    #prompt()
-    #self = exit
-
-    "asd"
-    "asd"
-    #os._exit(1)
-    exit()
-    # 0 / 0
-
+    level1()
     x = 1
-    lol()
-
     y = 2
     z = 3
-    # print(locals()["z"])
     print(x)
     print(y)
+    print(sys.gettrace())
     print(z)
-
+    0/0
 
 if __name__ == "__main__":
     main()
     exit()
+

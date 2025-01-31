@@ -9,8 +9,7 @@ a state stored in state.py
 seapie is intended to be used in scripts, not in the interactive interpreter
 """
 
-
-from seapie.repl import set_trace
+from seapie.helpers import set_trace
 
 # __version__ is single source of truth for packaging; <major>.<minor>.<patch> is used.
 # Trailing/leading zeroes are not allowed. Lone zeroes (such as in 0.1.0) are allowed.
