@@ -1,121 +1,112 @@
-<h1>seapie</h1>
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=25&duration=3000&pause=700&color=46BDFF&vCenter=true&random=false&width=350&height=40&lines=intuitive+debugger;free+and+open+source;powerful+code+stepping;remote+debugging" alt="Typing SVG" /></a>
-
-<img src="./img/seapie.png" alt="seapie" height="110" align="right">
-
-<div>
-<p align="left">
-  <a href="https://pypi.org/project/seapie/"><img src="https://static.pepy.tech/badge/seapie"></a>
-  &nbsp;
-  <a href="https://pypi.org/project/seapie/"><img src="https://img.shields.io/github/stars/hirsimaki-markus/seapie"/></a>
-  <br>
-  <a href="https://choosealicense.com/licenses/unlicense/"><img src="https://img.shields.io/badge/licence-The_Unlicence-purple"/></a>
-  &nbsp;
-  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/Style-Ruff-261230"/></a>
-  <br>
-  <a href="https://en.wikipedia.org/wiki/Finland"><img src="https://img.shields.io/badge/Made_with_%E2%9D%A4%20in-Finland-blue"/></a>
-  &nbsp;
-  <a href="https://github.com/hirsimaki-markus/seapie"><img src="https://img.shields.io/pypi/v/seapie"></a>
-  <br>
-  <a href="https://github.com/hirsimaki-markus/seapie"><img src="https://img.shields.io/badge/lines_of_code-1k-blue"/></a>
-  &nbsp;
-  <a href="https://github.com/hirsimaki-markus/seapie/graphs/contributors"><img src="https://img.shields.io/badge/contributions-welcome-blue"/></a>
-  <br>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.12.0-blue?logo=python&logoColor=white"/></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Dependencies-None-blue"/></a>
-</p>
-</div>
-
-
 <div align="center">
-    <br>
+    <img src="./img/seapie.svg" alt="seapie" height="100">
     <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
-    <br>
+    <em>Inject the <b>>>></b> shell anywhere, debug, and resume seamlessly</em>
 </div>
-
-## Additional licensing
-<details><summary>Show details</summary>
-
-This software is licensed under The Unlicense as the author's protest towards
-the modern copyright landscape. If you need a different lisence for a legal or
-compability reasons, just ask.
-
-</details>
-
 <br>
+<div align="center">
+    <a href="https://www.python.org/downloads/">
+        <img src="https://img.shields.io/badge/Python-3.6_to_3.13%2B-blue.svg?logo=python&logoColor=white" alt="Python Version">
+    </a>
+    <a href="https://en.wikipedia.org/wiki/Finland">
+        <img src="https://img.shields.io/badge/made_with_%E2%9D%A4%20in-Finland-blue"/>
+    </a>
+    <a href="https://github.com/hirsimaki-markus/seapie/graphs/contributors">
+        <img src="https://img.shields.io/badge/contributions-welcome-blue?logo=github"/>
+    </a>
+    <a href="https://choosealicense.com/licenses/unlicense/">
+        <img src="https://img.shields.io/badge/⚖️_licence-The_Unlicence-purple"/>
+    </a>
+    <a href="https://github.com/hirsimaki-markus/seapie">
+        <img src="https://img.shields.io/badge/💾_lines_of_code->500-blue"/>
+    </a>
+    <a href="https://www.python.org/">
+        <img src="https://img.shields.io/badge/Dependencies-😎_None-blue"/>
+    </a>
+    <a href="https://github.com/hirsimaki-markus/seapie">
+        <img src="https://img.shields.io/pypi/v/seapie">
+    </a>
+    <a href="https://pypi.org/project/seapie/">
+        <img src="https://static.pepy.tech/badge/seapie">
+    </a>
+    <a href="https://github.com/hirsimaki-markus/seapie/graphs/contributors">
+        <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/hirsimaki-markus/seapie?color=2b9348&logo=github">
+    </a>
+    <a href="https://github.com/hirsimaki-markus/seapie/stargazers">
+        <img src="https://img.shields.io/github/stars/hirsimaki-markus/seapie" alt="Stars Badge"/>
+    </a>
+    <a href="https://github.com/hirsimaki-markus/seapie/network/members">
+        <img src="https://img.shields.io/github/forks/hirsimaki-markus/seapie" alt="Forks Badge"/>
+    </a>
+</div>
+<hr>
 <br>
 
-## Documentation
-<details><summary>Show details</summary>
+🥧 seapie is a modern and intuitive Python debugger. Get an instant interactive shell
+anywhere in your scripts with `seapie.breakpoint()` to inspect, modify, and control
+program state like the normal python shell: `>>> print("hello world")`
+<br>
+
+<div><i>somewhere in myscript.py</i></div>
 
 ```python
->>> import seapie
->>> help(seapie)
->>> # Or take a look at the well documented source.
+...
+my_variable = 123
+import seapie; seapie.breakpoint()  # Shell starts here
+do_stuff(my_variable)
+...
 ```
 
-</details>
+<div><i>terminal</i></div>
 
-<br>
-<br>
-
-
-Intuitive replacemnt for the built-in `pdb` debugger
-
-
-## Development details
-<details><summary>Show details</summary>
-
-  **Linting**
-  ```bash
-  seapie$ python -m isort .
-  seapie$ python -m black .
-  seapie$ python -m flake8 src/ test/
-  ```
-
-  **Testing**
-  ```bash
-  seapie$ python test/??????
-  ```
-
-  **Building & releasing**
-  ```bash
-  # Remember to increment __version__ in version.py
-  seapie$ python -m build --wheel && rm -rf build/ && rm -rf src/seapie.egg-info/
-  seapie$ python -m twine check dist/*
-  seapie$ python -m twine upload dist/*
-  seapie$ rm -rf dist/
-  ```
-
-</details>
-
-
-
-
-
-
-
-
-
-### Documentation
-`help(seapie.add_path)  # Or look at the source.`
-
-### Licensing
-To protest the copyright landscape, I chose The Unlicense. If you need a different license, just ask.
-
-### Dev stuff
-* Install for dev stuff: `seapie$ pip install -e ".[dev]"  # In a venv`
-* Linting: `seapie$ python -m ruff check .`
-* Testing: `seapie$ python test/run_test_suite.py`
-* Releasing:
-```bash
-# Remember: increment __version__ in __init__.py
-# Remember: .pypirc file is needed.
-# Remember: run tests
-# Remember: run ruff
-seapie$ python -m build --wheel
-seapie$ rm -rf build/ && rm -rf src/seapie.egg-info/
-seapie$ python -m twine check dist/*
-seapie$ python -m twine upload dist/*
-seapie$ rm -rf dist/
 ```
+user@system:~/$ python myscript.py
+script says hello!
+🥧  seapie 3.1.1 (Python 3.13.1) [GCC 9.4.0] on linux
+Type "!help" or "!h" for seapie help.
+>>>
+>>> _
+```
+
+## Features
+
+In the shell new `!commands` and built in `_magic_` variables are available.
+These can be used for example to step until condition is met: `>>> !w _line_ > 17 and _event_ == "return"`
+<br>
+
+**🛠️ New !commands added to the shell**
+<br>
+• `>>> !step` and `>>> !walk <expression>` – Single stepping and conditional stepping
+<br>
+• `>>> !up` and `>>> !down` – Navigate up and down the frames in callstack 
+<br>
+• `>>> !goto <line>` – Skip ahead or rewind execution within the current frame
+<br>
+• `>>> !info` – Get your location in the callstack and source file 
+<br>
+• `>>> !continue` – Resume execution seamlessly, keeping only your modifications
+<br>
+• `>>> !pretty` – Toggle automatic prettyprinting of evaluated expressions
+<br>
+• `>>> !mode` – Switch between fast profiling and detailed tracing with
+<br>
+
+**🔮 New built in \_magic_ variables added to the shell, updated on each debug event**
+<br>
+• `_line_` – New built in magic variable: next line's line number
+<br>
+• `_source_` – Next line's source code
+<br>
+• `_filepath_` – Next line's source file
+<br>
+• `_return_` – Object to be returned if `_event_` is `"return"`
+<br>
+• `_event_` – Current debug event, one of `"call"`/`"return"`/`"line"`/`"exception"`
+<br>
+• `_callstack_` – List of frame names in the callstack
+<br>
+• `_` – Latest evaluated expression (updated on input, unlike others)
+
+
+
+
