@@ -32,9 +32,9 @@
 
 
 
-🥧 seapie is a modern & intuitive Python debugger. Get the familiar shell
-anywhere in your scripts with `seapie.breakpoint()` to interact and control
-the program flow. It's that easy: `>>> print("myvar:", x)`
+🥧 seapie is a modern and intuitive Python debugger. Get the familiar shell
+anywhere in your scripts with `seapie.breakpoint()` to inspect, modify, and control
+the flow. It's as easy as `>>> print(x)` and `>>> !walk x == 123`
 
 
 <br>
