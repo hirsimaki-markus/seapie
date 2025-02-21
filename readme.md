@@ -1,52 +1,43 @@
 <div align="center">
     <img src="./img/seapie.svg" alt="seapie" height="100">
     <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
-    <em>Inject the <b>>>></b> shell anywhere, debug, and resume seamlessly</em>
+    <em>Get the <b>>>></b> shell in your scipt, debug, resume</em>
 </div>
+
+
+
 <br>
+
+
+
 <div align="center">
-    <a href="https://www.python.org/downloads/">
-        <img src="https://img.shields.io/badge/Python-3.6_to_3.13%2B-blue.svg?logo=python&logoColor=white" alt="Python Version">
-    </a>
-    <a href="https://en.wikipedia.org/wiki/Finland">
-        <img src="https://img.shields.io/badge/made_with_%E2%9D%A4%20in-Finland-blue"/>
-    </a>
-    <a href="https://github.com/hirsimaki-markus/seapie/graphs/contributors">
-        <img src="https://img.shields.io/badge/contributions-welcome-blue?logo=github"/>
-    </a>
-    <a href="https://choosealicense.com/licenses/unlicense/">
-        <img src="https://img.shields.io/badge/⚖️_licence-The_Unlicence-purple"/>
-    </a>
-    <a href="https://github.com/hirsimaki-markus/seapie">
-        <img src="https://img.shields.io/badge/💾_lines_of_code->500-blue"/>
-    </a>
-    <a href="https://www.python.org/">
-        <img src="https://img.shields.io/badge/Dependencies-😎_None-blue"/>
-    </a>
-    <a href="https://github.com/hirsimaki-markus/seapie">
-        <img src="https://img.shields.io/pypi/v/seapie">
-    </a>
-    <a href="https://pypi.org/project/seapie/">
-        <img src="https://static.pepy.tech/badge/seapie">
-    </a>
-    <a href="https://github.com/hirsimaki-markus/seapie/graphs/contributors">
-        <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/hirsimaki-markus/seapie?color=2b9348&logo=github">
-    </a>
-    <a href="https://github.com/hirsimaki-markus/seapie/stargazers">
-        <img src="https://img.shields.io/github/stars/hirsimaki-markus/seapie" alt="Stars Badge"/>
-    </a>
-    <a href="https://github.com/hirsimaki-markus/seapie/network/members">
-        <img src="https://img.shields.io/github/forks/hirsimaki-markus/seapie" alt="Forks Badge"/>
-    </a>
+
+[![Python Version](https://img.shields.io/badge/Python-3.6_to_3.13%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Made with ❤️ in Finland](https://img.shields.io/badge/made_with_%E2%9D%A4%20in-Finland-blue)](https://en.wikipedia.org/wiki/Finland)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-blue?logo=github)](https://github.com/hirsimaki-markus/seapie/graphs/contributors)
+[![License: The Unlicense](https://img.shields.io/badge/⚖️_licence-The_Unlicence-purple)](https://choosealicense.com/licenses/unlicense/)
+[![Lines of Code](https://img.shields.io/badge/💾_lines_of_code-<500-blue)](https://github.com/hirsimaki-markus/seapie)
+[![Dependencies: None](https://img.shields.io/badge/dependencies-😎_None-blue)](https://www.python.org/)
+[![PyPI Version](https://img.shields.io/pypi/v/seapie)](https://github.com/hirsimaki-markus/seapie)
+[![Downloads](https://static.pepy.tech/badge/seapie)](https://pypi.org/project/seapie/)
+[![GitHub Contributors](https://img.shields.io/github/contributors/hirsimaki-markus/seapie?color=2b9348&logo=github)](https://github.com/hirsimaki-markus/seapie/graphs/contributors)
+[![Stars](https://img.shields.io/github/stars/hirsimaki-markus/seapie)](https://github.com/hirsimaki-markus/seapie/stargazers)
+[![Forks](https://img.shields.io/github/forks/hirsimaki-markus/seapie)](https://github.com/hirsimaki-markus/seapie/network/members)
+
 </div>
+
+
+
 <hr>
-<br>
 
-🥧 seapie is a modern and intuitive Python debugger. Get an instant interactive shell
-anywhere in your scripts with `seapie.breakpoint()` to inspect, modify, and control
-program state like the normal python shell: `>>> print("hello world")`
-<br>
 
+
+🥧 seapie is a modern & intuitive Python debugger. Get the familiar shell
+anywhere in your scripts with `seapie.breakpoint()` to interact and control
+the program flow. It's that easy: `>>> print("myvar:", x)`
+
+
+<br>
 <div><i>somewhere in myscript.py</i></div>
 
 ```python
