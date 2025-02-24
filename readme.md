@@ -74,8 +74,6 @@ Type "!help" or "!h" for seapie help.
 <br>
 • `_callstack_` – List of frame names in the callstack
 <br>
-• `_` – Latest evaluated expression (updated on output, not event)
-<br>
 
 ## 📖 Examples and FAQ
 <details><summary>Using the powerful stepping functionality</summary>
@@ -186,7 +184,6 @@ user@system:~/$
 user@system:~/$ _
 ```
 </details>
-<br>
 <details><summary>Pdb vs seapie ?</summary>
 
 | Selling point                                                           | seapie  | pdb  |
