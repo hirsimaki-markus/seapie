@@ -21,9 +21,6 @@ _Get the **`>>> _`** shell anywhere in your scipt –  **`pip install seapie`**_
 
 
 
-<hr>
-
-
 
 🥧 seapie is a modern and intuitive Python debugger. Get the familiar `>>> _` shell
 anywhere in your scripts with `seapie.breakpoint()` to inspect, modify, and control
