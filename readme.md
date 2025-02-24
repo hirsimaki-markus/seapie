@@ -1,10 +1,8 @@
 <div align="center">
     <img src="./img/seapie.svg" alt="seapie" height="80">
-    <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
-    <em>Get the <b>>>></b> shell anywhere in your scipt, debug, and continue</em>
-</div>
 
-<br>
+_Get the **`>>> _`** shell anywhere in your scipt –  **`pip install seapie`**_
+</div>
 
 <div align="center">
 
@@ -14,7 +12,7 @@
 [![License: The Unlicense](https://img.shields.io/badge/⚖️_licence-The_Unlicence-purple)](https://choosealicense.com/licenses/unlicense/)
 [![Lines of Code](https://img.shields.io/badge/💾_lines_of_code-<500-blue)](https://github.com/hirsimaki-markus/seapie)
 [![Dependencies: None](https://img.shields.io/badge/dependencies-😎_None-blue)](https://www.python.org/)
-[![PyPI Version](https://img.shields.io/pypi/v/seapie)](https://github.com/hirsimaki-markus/seapie)
+[![PyPI Version](https://img.shields.io/pypi/v/seapie)](https://pypi.org/project/seapie/)
 [![Downloads](https://static.pepy.tech/badge/seapie)](https://pypi.org/project/seapie/)
 [![GitHub Contributors](https://img.shields.io/github/contributors/hirsimaki-markus/seapie?color=2b9348&logo=github)](https://github.com/hirsimaki-markus/seapie/graphs/contributors)
 [![Stars](https://img.shields.io/github/stars/hirsimaki-markus/seapie)](https://github.com/hirsimaki-markus/seapie/stargazers)
@@ -27,7 +25,7 @@
 
 
 
-🥧 seapie is a modern and intuitive Python debugger. Get the familiar shell
+🥧 seapie is a modern and intuitive Python debugger. Get the familiar `>>> _` shell
 anywhere in your scripts with `seapie.breakpoint()` to inspect, modify, and control
 the flow. It's as easy as `>>> print(myvariable)`.
 
@@ -57,7 +55,7 @@ Type "!help" or "!h" for seapie help.
 <br>
 • `>>> !up` and `>>> !down` – Navigate up and down the frames in callstack 
 <br>
-• `>>> !info` and `>>> !help` – Get your location in the callstack & source and view built in help
+• `>>> !info` and `>>> !help` – Get your location in the callstack, source and view built in help
 <br>
 • `>>> !continue` – Resume execution seamlessly, keeping only your modifications
 <br>
@@ -79,7 +77,27 @@ Type "!help" or "!h" for seapie help.
 • `_` – Latest evaluated expression (updated on output, not event)
 <br>
 
-## 📖 Examples
+## 📖 Examples and FAQ
+<details><summary>Using the powerful stepping functionality</summary>
+
+Debug mode is toggled twice, first to fast profiling and later back to full tracing.
+The code is condititionally stepped until current debug event is `"call"`, and next line
+number to execute is `34`, and `x` is present in `locals()` and `x` is `None`.
+The `locals()` check is used to avoid `NameError` in frames where `x` is undefined.
+
+```console
+>>> !mode
+🏃  Debugging mode set to profiling only (calls and returns)
+>>> !w _event_ == "call" and _line_ == 34 and "x" in locals() and x is None
+🚶  Walk condition set. Stepping until bool(eval('_event_ == "call" and _line_ == 34 and "x" in locals() and x is None')) is True
+>>> !mode
+🐌  Debugging mode set to tracing (calls, returns, lines, exceptions)
+>>> _
+```
+</details>
+
+
+
 <details><summary>The !help command as seen in terminal</summary>
 
 ```console
@@ -168,28 +186,8 @@ user@system:~/$
 user@system:~/$ _
 ```
 </details>
-
-<details><summary>Using !mode and !walk to step code efficiently</summary>
-
-Debug mode is toggled twice, first to fast profiling and later back to full tracing.
-The code is condititionally stepped until current debug event is `"call"`, and next line
-number to execute is `34`, and `x` is present in `locals()` and `x` is `None`.
-The `locals()` check is used to avoid `NameError` in frames where `x` is undefined.
-
-```console
->>> !m
->>> !w _event_ == "call" and _line_ == 34 and "x" in locals() and x is None
->>> !m
->>> _
-```
-</details>
-
-
-
-
-
-## ❓ FAQ
-<details><summary>Pdb vs seapie</summary>
+<br>
+<details><summary>Pdb vs seapie ?</summary>
 
 | Selling point                                                           | seapie  | pdb  |
 | :---------------------------------------------------------------------- | :-----: | :--: |
@@ -205,13 +203,13 @@ The `locals()` check is used to avoid `NameError` in frames where `x` is undefin
 <br>
 ³ can't do some things such as adding new variables to non-global scope
 </details>
-<details><summary>Multiprocessing and multithreading</summary>
+<details><summary>Multiprocessing and multithreading ?</summary>
 In multiprocessing, seapie can be opened in any single process. If opened in multiple
 processes at the same time, they should be connected to different terminals to avoid
 confusing situations in the shell. In multithreading, a single thread can be debugged
 at a time.
 </details>
-<details><summary>Post mortem debugging</summary>
+<details><summary>Post mortem debugging ?</summary>
 You can achieve post mortem functionality using this try-except construct. The except
 should be placed to as close to the source of the exception as possible to prevent
 unrolling the callstack more than necessary. Currently seapie does not support moving
@@ -226,7 +224,7 @@ except Exception:  # Callstack gets unrolled from danger's exception until this 
     pass  # Debugger prompt gets called on this line, the pass statement is necessary.
 ```
 </details>
-<details><summary>Dev stuff & licensing & contact</summary>
+<details><summary>Dev stuff & licensing & contact ?</summary>
 
 •  Install from source for dev: `seapie$ pip install -e .`
 <br>
@@ -246,5 +244,7 @@ This project is in public domain. Feature requests and contributions are welcome
 project is released under The Unlicense as a personal protest from the author against
 the modern copyright landscape. If you need an alternative license, just contact me.
 Email: ɯoɔ˙lᴉɐɯƃ (ʇɐ) snʞɹɐɯ˙ᴉʞɐɯᴉsɹᴉɥ
+
+
 
 
