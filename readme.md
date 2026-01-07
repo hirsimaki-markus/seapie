@@ -26,7 +26,7 @@
     <a href="https://github.com/hirsimaki-markus/seapie/issues"><img src="https://img.shields.io/badge/Contributions-welcome-brightgreen" alt="Contributions welcome"/></a>
     <br>
     <br>
-    <img src="media/demo.gif" alt="seapie demo"/>
+    <img src="media/demo_render.gif" alt="seapie demo"/>
 </div>
 
 <br>
