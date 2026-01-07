@@ -65,6 +65,8 @@ Type "!help" for seapie help
 >>> print(locals())
 {'x': 1, 'myvariable': None}
 >>>
+>>> myvariable = x
+>>>
 >>> _magic_.keys()
 dict_keys(['_line_', '_source_', '_path_', '_return_', '_exception_', '_event_', '_callstack_'])
 >>>
