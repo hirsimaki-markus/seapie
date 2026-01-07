@@ -1,2 +1,13 @@
+# Compiled bytecode
 *.pyc
-dist/*
+
+# Temp files from building
+dist/
+build/
+**/*.egg-info/
+
+# Python virtual environments
+venv/
+.env/
+.venv/
+venv3.13/

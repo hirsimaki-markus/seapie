@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
 import sys
+import math
+import random
 
-import seapie
-import seapie.prompt  # noqa: E402, F401  # Silence linting.
-from seapie import set_trace
-
+VARIABLE = "woololloololo\n\nwolololo"
 
 def level2():
-
-    ##sys.settrace(seapie.repl.repl)
-    #sys._getframe(0).f_trace = seapie.repl.repl
 
     print("Goodbye, World!")
     return "byeee"
 
 def level1():
-    set_trace()
-    #breakpoint()
-    print("Goodbye, World!")
+    x = 1
 
-    level2()
-    #breakpoint()
+    import seapie; seapie.breakpoint()
 
+    while True:
+        print("spam")
+        x=1
+        x=2
+        x=3
+        0/0
     return "byeee"
 
 

@@ -1,22 +1,39 @@
-#!/usr/bin/env python3
+"""seapie - Debugger for humans. Get the familiar >>> _ REPL anywhere in your script.
 
-"""cpython depdency warning minne kaikkialle
+REPL-based debugger that uses sys.settrace/sys.setprofile to intercept Python execution.
+The debugger provides a familiar >>> _ prompt where you can inspect and modify state,
+navigate the callstack, and step through code with flexible walk conditions.
 
-mostly everything here is monolithic and the function are not reusable so you
-should not try importing them except for the prompt. a lot of stuff depends on
-a state stored in state.py
+Usage:
+    Test seapie without a script (do this):
+        python -c 'import seapie; seapie.breakpoint()'
 
-seapie is intended to be used in scripts, not in the interactive interpreter
+    In script (do this):
+        import seapie
+        seapie.breakpoint()  # Open the debugger, primary use case
+        seapie.show_help()  # Just view help without using the debugger
+
+    In normal Python REPL (don't do this, undefined behaviour):
+        Python 3.13.3 (main, May 27 2025, 12:54:28) [GCC 13.3.0] on linux
+        Type "help", "copyright", "credits" or "license" for more information.
+        >>> import seapie; seapie.breakpoint()
+        !!! seapie behaviour outside of scripts is undefined !!!
+
+Code flow when dropping to breakpoint (the >>> loop() is entered at each trace event):
+    seapie.breakpoint() ->
+        sys.settrace(loop) ->
+            seapie.repl.loop() handles events & code execution ->
+                seapie.repl.get_user_input() reads input ->
+                    seapie.repl.handle_user_input_command() handles commands ->
+                    seapie.repl.handle_user_input_exec() handles code execution ->
 """
 
-from seapie.helpers import set_trace
+from seapie.helpers import breakpoint, show_help  # Convenience imports
 
-# __version__ is single source of truth for packaging; <major>.<minor>.<patch> is used.
-# Trailing/leading zeroes are not allowed. Lone zeroes (such as in 0.1.0) are allowed.
-# When incrementing any of major, minor, patch, reset other numbers after it to zero.
-# A number with trailing zero is skipped (eg. 0.10.0) and incremented more (eg. 0.11.0).
-__version__ = "3.0.2"
+# Single source of version number. Uses <major>.<minor>.<patch>. Skip versions with
+# trailing/leading zeroes. Lone zeroes (such as in 0.1.0) are ok. When incrementing a
+# number, reset other numbers right of it to 0.
+__version__ = "4.0.0"
 __author__ = "Markus Hirsimäki"
 __copyright__ = "This work is dedicated to public domain under The Unlicense."
 __license__ = "The Unlicense"
-__all__ = ["set_trace"]

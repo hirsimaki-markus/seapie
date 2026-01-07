@@ -4,20 +4,18 @@ requires = ["setuptools"]
 
 [project]
 name = "seapie"
-description = "Intuitive replacemnt for the built-in pdb debugger"
+description = "A Python debugger that drops you into a live >>> prompt at breakpoints"
 authors = [{name = "Markus Hirsimäki"}]
 license = {text = "The Unlicense"}
 readme = "readme.md"
 dynamic = ["version"]
+keywords = ["debugger", "debug", "debugging", "breakpoint", "pdb", "repl", "interactive", "trace", "stepping", "seapie"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Operating System :: OS Independent"
 ]
-
-[project.optional-dependencies]
-dev = ["build", "twine", "ruff"]
 
 [project.urls]
 homepage = "https://github.com/hirsimaki-markus/seapie"
