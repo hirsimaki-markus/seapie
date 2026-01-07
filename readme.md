@@ -1,8 +1,9 @@
 <div align="center">
     <h1>
-        <br>
-        🥧 seapie
+        🥧 seapie — A breakpoint should just mean <code>&gt;&gt;&gt;</code>
     </h1>
+    <br>
+    <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
     <a href="https://pypi.org/project/seapie/"><img src="https://img.shields.io/pepy/dt/seapie?color=brightgreen" alt="Downloads"/></a>
     &nbsp;
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.7_to_3.14+-blue?logo=python&logoColor=white" alt="Python"/></a>
@@ -25,23 +26,15 @@
     <a href="https://github.com/hirsimaki-markus/seapie/issues"><img src="https://img.shields.io/badge/Contributions-welcome-brightgreen" alt="Contributions welcome"/></a>
     <br>
     <br>
-    A breakpoint should just mean <code>&gt;&gt;&gt;</code>
-    <br>
-    <br>
-    <pre>pip install <a href="https://github.com/hirsimaki-markus/seapie">seapie</a></pre>
-</div>
-
-<div align="center">
     <img src="media/demo.gif" alt="seapie demo"/>
 </div>
 
-Seapie is a Python debugger that drops you into a live `>>>` prompt at `breakpoint()`.
+<br>
 
-Instead of learning a debugger command language, you get a real Python shell with time
-paused — inspect state, experiment, and modify things freely. When you’re ready to move
-on, you can step through execution and observe what happens next — still inside the
-interpreter.
-<br><br>
+Seapie is a Python debugger that drops you into a real live `>>>` shell at `breakpoint()`.
+Inspect state, experiment, and modify things freely. When ready to move on, you can step through
+execution and observe what happens next — still inside the interpreter.
+<br>
 
 ## Hands on example
 
@@ -63,7 +56,6 @@ seapie 4.0.0 (Python 3.13.3) [GCC 13.3.0] on linux
 Type "!help" for seapie help
 >>>
 ```
-<br>
 
 ## seapie.breakpoint() gives you `>>>`. Try it out
 
@@ -90,14 +82,9 @@ dict_keys(['_line_', '_source_', '_path_', '_return_', '_exception_', '_event_',
     !(s)tep           Step through code execution
     !(e)vent          Step until a specific event type
     !(u)ntil          Step until a target like linenumber or file
-    !(w)alk           Step until arbitrary expression is True
-    !(g)oto           Jump execution to a line in current frame
-    !(c)ontinue       Completely detach debugger and resume normal execution
-    !(v)erbose        Toggle verbose output from other commands
-    !(p)retty         Toggle prettyprinting of the interpreter output
+... ( cut for brevity in readme ) ...
 >>>
 ```
-<br>
 
 ## Eventually, you’ll want time to move again
 
