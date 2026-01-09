@@ -99,7 +99,7 @@ dict_keys(['_line_', '_source_', '_path_', '_return_', '_exception_', '_event_',
 >>> !bad-command
 💀  Unknown command !bad-command
 ⚡ !command quicklist (example: >>> !location)
-    !(h)elp           Show this help message
+    !(h)elp           Show help
     !(l)ocation       Show source code around currently executing line
     !(t)raceback      Show callstack with current frame highlighted
     !(f)rame          Move up and down in callstack
