@@ -31,12 +31,35 @@
 
 <br>
 
-Seapie is a Python debugger that drops you into a real live `>>>` shell at `breakpoint()`.
-Inspect state, experiment, and modify things freely. When ready to move on, you can step through
-execution and observe what happens next — still inside the interpreter.
-<br>
+# Why seapie?
 
-## Hands on example
+<div><b>1. Debugging for humans</b></div>
+
+seapie comes with a user experience focused on discoverability: helpful error messages and built-in `help` you can reach from anywhere
+
+<div><b>2. Debug by describing what you want</b></div>
+
+All debuggers let you step. seapie lets **Python** expressions *walk* without magic syntax: _”stop when myfunc returns None, and call stack contains myhelper”_
+
+`>>> !walk (_event_ == "return") and (_return_ is None) and ("myhelper" in _callstack_)`
+
+<div><b>3. REPL-first by design <code>&gt;&gt;&gt;</code></b></div>
+
+Checking a variable is `print(myvar)` changing it is `myvar = None`. Debugging `!commands` work in the REPL and inspecting state is just python:
+
+```python
+>>> _magic_
+{'_line_': 8,
+ '_source_': '    return round(total_with_tax, 2)',
+ '_path_': '/home/hirsimak/seapie/test/demo.py',
+ '_return_': 35.64,
+ '_exception_': None,
+ '_event_': 'return',
+ '_callstack_': ['<module>', 'checkout']}
+>>>
+```
+
+# Hands on example
 
 <div><i>myscript.py</i></div>
 
@@ -57,7 +80,7 @@ Type "!help" for seapie help
 >>>
 ```
 
-## seapie.breakpoint() gives you `>>>`. Try it out
+# seapie.breakpoint() gives you `>>>`. Try it out
 
 <div><i>terminal</i></div>
 
@@ -88,7 +111,7 @@ dict_keys(['_line_', '_source_', '_path_', '_return_', '_exception_', '_event_',
 >>>
 ```
 
-## Eventually, you’ll want time to move again
+# Eventually, you’ll want time to move again
 
 Seapie doesn’t lock you into the prompt - you can step forward, jump around, or
 resume normal execution whenever you feel done exploring. If you’re ever curious
