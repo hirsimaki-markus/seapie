@@ -23,6 +23,8 @@
     &nbsp;
     <a href="https://github.com/hirsimaki-markus/seapie/network/members"><img src="https://img.shields.io/github/forks/hirsimaki-markus/seapie" alt="Forks"/></a>
     &nbsp;
+    <a href="https://github.com/hirsimaki-markus/seapie/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/hirsimaki-markus/seapie" alt="Closed Issues"/></a>
+    &nbsp;
     <a href="https://github.com/hirsimaki-markus/seapie/issues"><img src="https://img.shields.io/badge/Contributions-welcome-brightgreen" alt="Contributions welcome"/></a>
     <br>
     <br>
