@@ -124,7 +124,8 @@ HELP_HELP = """    !help
 
 HELP_LOCATION = """    !location
     Show source code around the currently executing line for the working frame being
-    inspected. Using !frame <up/down/home> will update what !location shows.
+    inspected. Using !frame <up/down/home> will update what !location shows. Terminal
+    size affects how much of the source is shown.
 """
 
 HELP_TRACEBACK = """    !traceback

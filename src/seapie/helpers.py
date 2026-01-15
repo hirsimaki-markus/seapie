@@ -6,13 +6,13 @@ import inspect
 import pathlib
 import platform
 import pprint
+import pydoc
 import shutil
 import signal
 import sys
-import pydoc
+import textwrap
 import threading
 import traceback
-import textwrap
 
 import seapie.constants
 import seapie.repl
@@ -139,6 +139,8 @@ def show_help():
 def get_term_width():
     return shutil.get_terminal_size()[0]
 
+def get_term_height():
+    return shutil.get_terminal_size()[1]
 
 def displayhook(obj):
     """Used with sys.displayhook. Implements prettyprinting and mimics the _ in repl.
@@ -179,48 +181,75 @@ def is_traceable(frame, event):
         return False
 
     # Don't trace seapie's own code
-    excluded_codes = (
-        exit.__call__.__code__,
+    excluded_codes = [
         seapie.breakpoint.__code__,
         displayhook.__code__,
-    )
+    ]
+    # exit() might not exist in some environments like xonsh
+    if hasattr(builtins, 'exit'):
+        excluded_codes.append(exit.__call__.__code__)
+
     if frame.f_code in excluded_codes:
         return False
 
     return True
 
 
-def show_source(frame, event, context=50):
+def show_source(frame, event):
     """Show source code around the current line with the current line highlighted.
 
-    Displays up to 'context' lines before and after the current line.
-    Current line is shown with inverted colors.
+    Layout:
+    - Header: first row
+    - Source: fills screen
+    - Footer: second-to-last row
+    - Last row reserved for next >>> prompt
     """
     term_width = get_term_width()
+    term_height = get_term_height()
     filepath = frame.f_code.co_filename
+    lineno = frame.f_lineno
+
+    # Rows layout
+    source_rows = max(term_height - 3, 1)
+
+    # Centering rule:
+    # odd  -> exact center
+    # even -> one-up from center
+    center_offset = (source_rows - 1) // 2
 
     # Header
-    print(f" file: {filepath} ".center(term_width, "-"))
+    print(f" file: {pathlib.Path(filepath).name} ".center(term_width, "-"))
+
     try:
         lines = pathlib.Path(filepath).read_text().splitlines()
     except Exception:
         print(f"  Can't read source: {pathlib.Path(filepath).name}")
         return
 
-    # Print source code
-    start = max(frame.f_lineno - context, 1)  # Ensure start is at least 1.
-    end = min(frame.f_lineno + context, len(lines))  # Ensure end doesn't hit EOF.
-    for lineno in range(start, end + 1):
-        lno_str = str(lineno).rjust(len(str(end)) + 2)  # Align line numbers.
-        line_content = f"{lno_str} {lines[lineno - 1].rstrip()}"[:term_width]
-        if lineno == frame.f_lineno:
-            print(invert(line_content))
-        else:
-            print(line_content)
+    total_lines = len(lines)
 
-    # Footer + one extra reset at end to ensure it happens after all prints in case of
-    # cropped output
-    print(f"{seapie.constants.VT_RESET} debug event: {event} ".center(term_width, "-"))
+    # Initial window
+    start = lineno - center_offset
+    end = start + source_rows - 1
+
+    # Clamp to file start
+    if start < 1:
+        start = 1
+        end = min(source_rows, total_lines)
+
+    # Clamp to file end
+    if end > total_lines:
+        end = total_lines
+        start = max(1, end - source_rows + 1)
+
+    # Print source (fills exactly source_rows or EOF-limited)
+    for i in range(start, end + 1):
+        lno_str = str(i).rjust(len(str(end)) + 2)
+        line = f"{lno_str} {lines[i - 1].rstrip()}"[:term_width]
+        print(invert(line) if i == lineno else line)
+
+    # Footer (always second-to-last row)
+    print(seapie.constants.VT_RESET + f" debug event: {event} ".center(term_width, "-"))
 
 
 def update_magic_variables(f, event, arg):
@@ -379,7 +408,8 @@ def show_keep_value():
 
     frame = seapie.repl.STATE["working_frame"]
 
-    term_width, term_height = shutil.get_terminal_size()
+    term_width = get_term_width()
+    term_height = get_term_height()
     min_width = 40   # Minimum sensible terminal width for the box
     min_height = 10  # Need room for box (up to 7 lines) plus REPL
 

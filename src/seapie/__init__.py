@@ -33,7 +33,7 @@ from seapie.helpers import breakpoint, show_help  # Convenience imports
 # Single source of version number. Uses <major>.<minor>.<patch>. Skip versions with
 # trailing/leading zeroes. Lone zeroes (such as in 0.1.0) are ok. When incrementing a
 # number, reset other numbers right of it to 0.
-__version__ = "4.0.0"
+__version__ = "4.0.1"
 __author__ = "Markus Hirsimäki"
 __copyright__ = "This work is dedicated to public domain under The Unlicense."
 __license__ = "The Unlicense"

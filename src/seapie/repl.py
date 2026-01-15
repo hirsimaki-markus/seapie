@@ -44,7 +44,8 @@ def get_user_input():
     """
     # Exit without showing prompt if interpreter is in process of closing
     if sys.stdin.closed:
-        exit()  # Avoid 'stdin is closed' error loop if interpreter is closing
+        # Can't use exit(); interactive-only and might be missing (i.e. xonsh shell)
+        sys.exit()  # Avoid 'stdin is closed' error loop if interpreter is closing
 
     def read_multiline_input_or_command():
         lines = []
@@ -61,7 +62,8 @@ def get_user_input():
         return read_multiline_input_or_command()
     except EOFError:  # Mimic EOF behaviour from ctrl+d by user in input.
         print()  # Print newline before exit because ctrl+d cancels the input
-        exit()
+        # Can't use exit(); interactive-only and might be missing (i.e. xonsh shell)
+        sys.exit()
     except KeyboardInterrupt:  # Ctrl+c by user in input
         print()  # Print newline before traceback because ctrl+c cancels the input
         # 3 hides: [0]=show_tb, [1]=get_user_input, [2]=loop
